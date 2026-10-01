@@ -30,6 +30,10 @@ android {
     buildFeatures { compose = true }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     // All Apache-2.0 (see THIRD_PARTY_LICENSES.md)
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))

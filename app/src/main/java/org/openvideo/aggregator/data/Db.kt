@@ -165,6 +165,6 @@ interface AppDao {
     entities = [ProfileEntity::class, CachedVideo::class, LibraryEntry::class, PlaylistEntity::class,
         PlaylistItem::class, NoteEntity::class, FollowEntity::class, HiddenCreator::class,
         HiddenTopic::class, SearchEntity::class, DownloadEntity::class],
-    version = 1, exportSchema = false,
+    version = 1, exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() { abstract fun dao(): AppDao }
