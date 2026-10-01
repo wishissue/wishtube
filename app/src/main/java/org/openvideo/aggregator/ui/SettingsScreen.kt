@@ -53,6 +53,7 @@ fun SettingsScreen(app: AppViewModel, pad: PaddingValues, onBack: () -> Unit) {
     val compact by up.compact.collectAsStateWithLifecycle()
     val reduce by up.reduceMotion.collectAsStateWithLifecycle()
     val autoplay by up.autoplay.collectAsStateWithLifecycle()
+    val autoplayNext by up.autoplayNext.collectAsStateWithLifecycle()
     val captions by up.captions.collectAsStateWithLifecycle()
     val background by up.background.collectAsStateWithLifecycle()
     val pip by up.pip.collectAsStateWithLifecycle()
@@ -119,6 +120,7 @@ fun SettingsScreen(app: AppViewModel, pad: PaddingValues, onBack: () -> Unit) {
 
             item { Section("Playback") }
             item { SwitchRow("Autoplay", "Start playing as soon as a video opens.", autoplay) { up.set("autoplay", up.autoplay, it) } }
+            item { SwitchRow("Autoplay next video", "Automatically play the next video from the related list.", autoplayNext) { up.setAutoplayNext(it) } }
             item { SwitchRow("Captions by default", "Show captions when the video has them.", captions) { up.set("captions", up.captions, it) } }
             item { SwitchRow("Background playback", "Keep audio playing when you leave the app.", background) { up.set("background", up.background, it) } }
             item { SwitchRow("Picture-in-picture", "Shrink the video when you leave the app.", pip) { up.set("pip", up.pip, it) } }

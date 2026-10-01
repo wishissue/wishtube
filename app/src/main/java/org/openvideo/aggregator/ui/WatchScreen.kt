@@ -114,6 +114,14 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
     var attempt by remember(video.id) { mutableIntStateOf(0) }
     var extra by remember(video.id) { mutableStateOf<StreamInfo?>(null) }
     var playerError by remember { mutableStateOf<String?>(null) }
+    val hidden by vm.hiddenCreators.collectAsStateWithLifecycle()
+    val related = remember(video.id) {
+        val t = Topics.of(video)
+        vm.container.sources.known.values.filter {
+            it.id != video.id && it.creatorKey !in hidden &&
+                (it.creatorKey == video.creatorKey || Topics.of(it).intersect(t).isNotEmpty())
+        }.take(12)
+    }
 
     DisposableEffect(Unit) { c.pipEligible = true; onDispose { c.pipEligible = false } }
 
@@ -176,10 +184,15 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
     DisposableEffect(video.id) {
         onDispose { if (vm.nowPlaying.value?.id == video.id) vm.saveProgress(video, exo.currentPosition, exo.duration) }
     }
-    DisposableEffect(exo) {
+    DisposableEffect(exo, related) {
         val l = object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) { playerError = error.message ?: "Playback error" }
-            override fun onPlaybackStateChanged(playbackState: Int) { if (playbackState == Player.STATE_READY) playerError = null }
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) playerError = null
+                if (playbackState == Player.STATE_ENDED && vm.prefs.autoplayNext.value) {
+                    related.firstOrNull()?.let { onOpenVideo(it) }
+                }
+            }
         }
         exo.addListener(l); onDispose { exo.removeListener(l) }
     }

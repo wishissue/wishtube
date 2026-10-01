@@ -18,9 +18,11 @@ class UserPrefs(private val p: SharedPreferences) {
     /** 0 = auto, 1 = 1080p, 2 = 720p, 3 = 480p, 4 = 360p */
     val quality = MutableStateFlow(p.getInt("quality", 0))
     val speed = MutableStateFlow(p.getFloat("speed", 1f))
+    val autoplayNext = MutableStateFlow(p.getBoolean("autoplayNext", false))
 
     fun set(key: String, flow: MutableStateFlow<Boolean>, v: Boolean) { p.edit().putBoolean(key, v).apply(); flow.value = v }
     fun setTheme(v: String) { p.edit().putString("theme", v).apply(); theme.value = v }
     fun setQuality(v: Int) { p.edit().putInt("quality", v).apply(); quality.value = v }
     fun setSpeed(v: Float) { p.edit().putFloat("speed", v).apply(); speed.value = v }
+    fun setAutoplayNext(v: Boolean) { p.edit().putBoolean("autoplayNext", v).apply(); autoplayNext.value = v }
 }
