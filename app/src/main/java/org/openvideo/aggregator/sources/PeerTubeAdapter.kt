@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import org.openvideo.aggregator.domain.*
 import java.io.IOException
+import java.net.URI
 import java.time.Instant
 
 /**
@@ -80,18 +81,21 @@ class PeerTubeAdapter(private val prefs: SharedPreferences) : VideoSource {
         val webFiles = ((o["files"] as? JsonArray) ?: (o["webVideoFiles"] as? JsonArray))
             ?.mapNotNull { it.obj() }.orEmpty().filter { it["fileUrl"].str() != null }
         val best = webFiles.filter { res(it) <= 1080 }.maxByOrNull { res(it) } ?: webFiles.minByOrNull { res(it) }
-        val mp4 = best?.get("fileUrl").str()
-        val download = best?.get("fileDownloadUrl").str() ?: mp4
-        val hls = (o["streamingPlaylists"] as? JsonArray)?.firstOrNull().obj()?.get("playlistUrl").str()
+        val mp4Raw = best?.get("fileUrl").str()
+        val mp4 = mp4Raw?.let { if (it.startsWith("/")) "https://$host$it" else it }
+        val downloadRaw = best?.get("fileDownloadUrl").str() ?: mp4Raw
+        val download = downloadRaw?.let { if (it.startsWith("/")) "https://$host$it" else it }
+        val hlsRaw = (o["streamingPlaylists"] as? JsonArray)?.firstOrNull().obj()?.get("playlistUrl").str()
+        val hls = hlsRaw?.let { if (it.startsWith("/")) "https://$host$it" else it }
         val playUrl = hls ?: mp4
             ?: throw IOException("No playable stream (video may be private, live or restricted)")
         StreamInfo(playUrl, hls != null, download, capsD.await(), chapD.await(), descD.await())
     }
 
     override suspend fun resolveUrl(url: String): Video? {
-        val u = Uri.parse(url)
+        val u = runCatching { URI.create(url) }.getOrNull() ?: return null
         val host = u.host ?: return null
-        val segs = u.pathSegments
+        val segs = u.path?.split('/')?.filter { it.isNotEmpty() } ?: emptyList()
         val id = when {
             segs.size >= 2 && segs[0] == "w" -> segs[1]
             segs.size >= 3 && segs[0] == "videos" && segs[1] == "watch" -> segs[2]

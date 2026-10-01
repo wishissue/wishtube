@@ -4,6 +4,8 @@ import android.net.Uri
 import kotlinx.serialization.json.*
 import org.openvideo.aggregator.domain.*
 import java.io.IOException
+import java.net.URI
+import java.net.URLEncoder
 
 /**
  * Odysee / LBRY via the public LBRY SDK JSON-RPC proxy.
@@ -55,16 +57,17 @@ class OdyseeAdapter : VideoSource {
     /** sourceVideoId = "name|claimId|sdHash6" */
     override suspend fun resolveStream(video: Video): StreamInfo {
         val (name, claimId, sd) = video.sourceVideoId.split('|', limit = 3)
-        val url = "https://player.odycdn.com/api/v3/streams/free/${Uri.encode(name)}/$claimId/$sd.mp4"
+        val encodedName = URLEncoder.encode(name, "UTF-8").replace("+", "%20")
+        val url = "https://player.odycdn.com/api/v3/streams/free/$encodedName/$claimId/$sd.mp4"
         return StreamInfo(url, isHls = false, downloadUrl = url)
     }
 
     override suspend fun resolveUrl(url: String): Video? {
         val lbry: String = if (url.startsWith("lbry://")) url else {
-            val u = Uri.parse(url)
+            val u = runCatching { URI.create(url) }.getOrNull() ?: return null
             val host = u.host?.removePrefix("www.") ?: return null
             if (host != "odysee.com") return null
-            val segs = u.pathSegments.filter { it.isNotEmpty() }
+            val segs = u.path?.split('/')?.filter { it.isNotEmpty() } ?: emptyList()
             when {
                 segs.size >= 2 && segs[0].startsWith("@") ->
                     "lbry://" + segs[0].replace(':', '#') + "/" + segs[1].replace(':', '#')
