@@ -29,7 +29,13 @@ val keyPasswordProp = getReleaseProperty("keyPassword", "WISHTUBE_KEY_PASSWORD")
 val hasReleaseSigning = storeFileProp != null && storePasswordProp != null && keyAliasProp != null && keyPasswordProp != null
 
 gradle.taskGraph.whenReady {
-    val isReleaseExecution = allTasks.any { it.name.contains("Release", ignoreCase = true) || it.name.contains("BundleRelease", ignoreCase = true) }
+    val isReleaseExecution = allTasks.any { 
+        it.name == "assembleRelease" || 
+        it.name == "bundleRelease" || 
+        it.name == "publishRelease" ||
+        it.name.startsWith("packageRelease") ||
+        it.name.startsWith("signRelease")
+    }
     if (isReleaseExecution && !hasReleaseSigning && System.getenv("CI") == "true") {
         throw GradleException("FATAL: Release signing is required on CI/tag builds, but signing configuration is missing.")
     }
