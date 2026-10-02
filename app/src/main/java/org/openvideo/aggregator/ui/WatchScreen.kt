@@ -251,12 +251,14 @@ private fun PlayerArea(
     val ctx = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var view by remember { mutableStateOf<PlayerView?>(null) }
+    var isFull by remember { mutableStateOf(false) }
+
     Box(modifier.background(Color.Black)) {
         AndroidView(
             factory = { context ->
                 PlayerView(context).apply {
                     player = exo
-                    setFullscreenButtonClickListener { fs -> onFullscreen(fs) }
+                    setFullscreenButtonClickListener(null)
                     view = this
                 }
             },
@@ -264,17 +266,34 @@ private fun PlayerArea(
             onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize(),
         )
-        // Cute floating Back button in top-left corner with warm glass badge
-        GlassSurface(
-            modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
-            shape = RoundedCornerShape(20.dp),
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onBack()
-            }
+        // Top overlay bar with Back and Fullscreen toggle
+        Row(
+            modifier = Modifier.align(Alignment.TopStart).fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            GlassSurface(
+                shape = RoundedCornerShape(20.dp),
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onBack()
+                }
+            ) {
+                Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                }
+            }
+            GlassSurface(
+                shape = RoundedCornerShape(20.dp),
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    isFull = !isFull
+                    onFullscreen(isFull)
+                }
+            ) {
+                Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
+                    Icon(if (isFull) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen, "Fullscreen", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                }
             }
         }
         // Double-tap left/right sides to seek 10s. The middle and bottom stay free for the controller.

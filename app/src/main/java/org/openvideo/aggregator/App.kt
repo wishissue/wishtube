@@ -59,6 +59,7 @@ class App : Application(), ImageLoaderFactory {
     override fun onCreate() { super.onCreate(); container = AppContainer(this) }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
+        .callFactory(Http.client)
         .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.25).build() }
         .diskCache { DiskCache.Builder().directory(cacheDir.resolve("img")).maxSizeBytes(100L * 1024 * 1024).build() }
         .crossfade(true)
