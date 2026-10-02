@@ -23,17 +23,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -313,7 +317,7 @@ private fun PlayerArea(
                         }
                     ) {
                         Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
-                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         }
                     }
                     Text(
@@ -333,10 +337,10 @@ private fun PlayerArea(
                     ) {
                         Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
                             Icon(
-                                if (fullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen,
+                                if (fullscreen) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen,
                                 "Fullscreen",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
@@ -356,20 +360,21 @@ private fun PlayerArea(
                             },
                             modifier = Modifier.size(56.dp).background(Color(0x88000000), RoundedCornerShape(32.dp))
                         ) {
-                            Icon(Icons.Outlined.FastRewind, "Rewind 10s", tint = Color.White, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Rounded.Replay10, "Rewind 10s", tint = Color.White, modifier = Modifier.size(28.dp))
                         }
+                        val scale by animateFloatAsState(if (isPlaying) 1f else 1.08f, label = "playScale")
                         IconButton(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 if (exo.isPlaying) exo.pause() else exo.play()
                             },
-                            modifier = Modifier.size(72.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
+                            modifier = Modifier.size(76.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(38.dp)).scale(scale)
                         ) {
                             Icon(
-                                if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                                if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                                 if (isPlaying) "Pause" else "Play",
                                 tint = Color.White,
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(44.dp)
                             )
                         }
                         IconButton(
@@ -379,7 +384,7 @@ private fun PlayerArea(
                             },
                             modifier = Modifier.size(56.dp).background(Color(0x88000000), RoundedCornerShape(32.dp))
                         ) {
-                            Icon(Icons.Outlined.FastForward, "Forward 10s", tint = Color.White, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Rounded.Forward10, "Forward 10s", tint = Color.White, modifier = Modifier.size(28.dp))
                         }
                     }
                 }
