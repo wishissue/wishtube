@@ -165,7 +165,7 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onB
     // Resolve the stream and start playback. Downloaded files play offline without any network call.
     LaunchedEffect(video.id, attempt, streamIndex) {
         val playing = vm.nowPlaying.value
-        if (playing?.id == video.id && attempt == 0 && streamIndex == 0 && exo.playbackState != Player.STATE_IDLE) {
+        if (playing?.id == video.id && attempt == 0 && streamIndex == 0 && exo.playbackState == Player.STATE_READY) {
             resolving = false; return@LaunchedEffect
         }
         if (playing != null && playing.id != video.id) vm.saveProgress(playing, exo.currentPosition, exo.duration)
@@ -192,7 +192,8 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onB
             exo.setMediaItem(item)
             exo.prepare()
             if (resume > 0) exo.seekTo(resume)
-            exo.playWhenReady = vm.prefs.autoplay.value
+            exo.playWhenReady = true
+            exo.play()
             vm.nowPlaying.value = video
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { loadError = e.message ?: "Unknown error" }
