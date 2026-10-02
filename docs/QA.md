@@ -1,4 +1,4 @@
-# OpenVideo Manual QA Checklist
+# WishTube Manual QA Checklist
 
 ## 1. Home & Feeds
 - [ ] For You feed loads successfully, respecting recommendation preferences and sliders.
@@ -44,5 +44,5 @@
 - [ ] Creator video list paginates correctly.
 
 ## 8. Deep Links
-- [ ] Opening `odysee.com/...` or `lbry://...` deep link launches OpenVideo and resolves the video.
-- [ ] Opening PeerTube `/w/...` or `/videos/watch/...` deep link launches OpenVideo and resolves the video.
+- [ ] Opening `odysee.com/...` or `lbry://...` deep link launches WishTube and resolves the video.
+- [ ] Opening PeerTube `/w/...` or `/videos/watch/...` deep link launches WishTube and resolves the video.
