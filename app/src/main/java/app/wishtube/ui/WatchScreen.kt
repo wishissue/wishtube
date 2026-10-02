@@ -464,7 +464,7 @@ private fun Details(video: Video, extra: StreamInfo?, vm: AppViewModel, modifier
         }
         if (related.isNotEmpty()) {
             item { Text("Related", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() }) }
-            items(related, key = { it.id }) { r -> VideoCard(r, vm, { onOpenVideo(r) }) }
+            items(related, key = { it.id }) { r -> VideoCard(r, vm, { onOpenVideo(r) }, modifier = if (isFullBleed()) Modifier.bleedHorizontal(16.dp) else Modifier) }
         }
     }
 

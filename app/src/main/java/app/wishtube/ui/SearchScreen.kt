@@ -104,8 +104,8 @@ fun SearchScreen(app: AppViewModel, pad: PaddingValues, nav: Nav, onBack: () -> 
         if (vm.errors.isNotEmpty() && !shown.isNullOrEmpty()) ErrorBanner(vm.errors) { vm.run() }
         Box(Modifier.weight(1f)) {
             when {
-                vm.loading -> LazyVerticalGrid(cells, contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { items(4) { SkeletonCard() } }
+                vm.loading -> LazyVerticalGrid(cells, contentPadding = feedPadding(),
+                    horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) { items(4) { SkeletonCard() } }
                 shown == null && recent.isNotEmpty() -> LazyColumn {
                     item { Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("Recent searches", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
@@ -119,8 +119,8 @@ fun SearchScreen(app: AppViewModel, pad: PaddingValues, nav: Nav, onBack: () -> 
                 shown == null -> EmptyState(Icons.Outlined.Search, "Search across sources", "Results from PeerTube, Odysee, Internet Archive, media.ccc.de, and Wikimedia Commons appear together.")
                 shown.isEmpty() && vm.errors.isNotEmpty() -> FailureState(vm.errors, nav) { vm.run() }
                 shown.isEmpty() -> EmptyState(Icons.Outlined.SearchOff, "Nothing found", "Try another search or source.")
-                else -> LazyVerticalGrid(cells, contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
+                else -> LazyVerticalGrid(cells, contentPadding = feedPadding(),
+                    horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
                     items(shown, key = { it.id }, contentType = { "video_card" }) { v -> VideoCard(v, app, { nav.openVideo(v) }, Modifier.animateItem()) }
                 }
             }

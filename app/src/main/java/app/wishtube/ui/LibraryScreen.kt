@@ -66,8 +66,8 @@ fun LibraryScreen(app: AppViewModel, pad: PaddingValues, nav: Nav) {
 @Composable
 private fun VideoList(items: List<Video>, app: AppViewModel, nav: Nav, icon: ImageVector, title: String, body: String) {
     if (items.isEmpty()) { EmptyState(icon, title, body); return }
-    LazyVerticalGrid(feedCells(), contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
+    LazyVerticalGrid(feedCells(), contentPadding = feedPadding(),
+        horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
         items(items, key = { it.id }) { v -> VideoCard(v, app, { nav.openVideo(v) }, Modifier.animateItem()) }
     }
 }
@@ -80,13 +80,13 @@ private fun DownloadsTab(app: AppViewModel, nav: Nav) {
         EmptyState(Icons.Outlined.Download, "No downloads", "Downloads appear here when a source offers a downloadable file. They play offline.")
         return
     }
-    LazyVerticalGrid(feedCells(), contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyVerticalGrid(feedCells(), contentPadding = feedPadding(),
+        horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
         items(vids, key = { it.id }) { v ->
             val d = map[v.id]
             Column(Modifier.animateItem()) {
                 VideoCard(v, app, { nav.openVideo(v) })
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = if (isFullBleed()) 12.dp else 4.dp, end = 4.dp)) {
                     val status = when (d?.status) {
                         DlStatus.DONE -> "Downloaded • ${"%.1f".format((d?.bytes ?: 0L) / 1_048_576.0)} MB"
                         DlStatus.RUNNING -> if ((d?.total ?: 0L) > 0) "Downloading ${100 * (d?.bytes ?: 0L) / (d?.total ?: 1L)}%" else "Downloading…"
@@ -114,13 +114,13 @@ private fun NotesTab(app: AppViewModel, nav: Nav) {
         EmptyState(Icons.Outlined.EditNote, "No notes yet", "Private notes you add to videos appear here. They never change the original description.")
         return
     }
-    LazyVerticalGrid(feedCells(), contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyVerticalGrid(feedCells(), contentPadding = feedPadding(),
+        horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
         items(rows, key = { it.video.id }) { r ->
             val v = remember(r.video.id) { r.video.toVideo() }
             Column(Modifier.animateItem()) {
                 VideoCard(v, app, { nav.openVideo(v) })
-                Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(top = 4.dp, start = if (isFullBleed()) 12.dp else 0.dp)) {
                     Column(Modifier.padding(12.dp)) {
                         Text("My note", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
                         Text(r.noteText, style = MaterialTheme.typography.bodyMedium)

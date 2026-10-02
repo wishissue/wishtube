@@ -59,8 +59,8 @@ fun CreatorScreen(key: String, app: AppViewModel, pad: PaddingValues, nav: Nav, 
             IconButton(onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") }
             Text(name, style = MaterialTheme.typography.titleLarge, maxLines = 1, modifier = Modifier.weight(1f).semantics { heading() })
         }
-        LazyVerticalGrid(feedCells(), contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
+        LazyVerticalGrid(feedCells(), contentPadding = feedPadding(),
+            horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

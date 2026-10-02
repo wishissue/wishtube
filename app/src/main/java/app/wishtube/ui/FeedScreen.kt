@@ -107,7 +107,6 @@ fun FeedScreen(title: String, modes: List<FeedMode>, vmKey: String, app: AppView
     }
     val retry: () -> Unit = { if (pid != null) feedVm.refresh(mode, pid, weights) }
     val cells = feedCells()
-    val gap = feedSpacing()
 
     Column(Modifier.fillMaxSize().padding(pad)) {
         ScreenTopBar(title, nav)
@@ -120,14 +119,14 @@ fun FeedScreen(title: String, modes: List<FeedMode>, vmKey: String, app: AppView
             when {
                 mode == FeedMode.FOLLOWING && follows.isEmpty() -> EmptyState(Icons.Outlined.Subscriptions, "Not following anyone yet",
                     "Follow creators from a video or creator page and their latest videos will appear here.")
-                visible.isEmpty() && state.loading -> LazyVerticalGrid(cells, contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                visible.isEmpty() && state.loading -> LazyVerticalGrid(cells, contentPadding = feedPadding(),
+                    horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
                     items(6) { SkeletonCard() }
                 }
                 visible.isEmpty() && state.errors.isNotEmpty() -> FailureState(state.errors, nav, retry)
                 visible.isEmpty() -> EmptyState(Icons.Outlined.VideoLibrary, "Nothing here yet", "Pull down to refresh or try another mode.")
-                else -> LazyVerticalGrid(cells, contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(gap)) {
+                else -> LazyVerticalGrid(cells, contentPadding = feedPadding(),
+                    horizontalArrangement = Arrangement.spacedBy(feedHGap()), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
                     items(visible, key = { it.video.id }, contentType = { "video_card" }) { r ->
                         VideoCard(r.video, app, { nav.openVideo(r.video) }, Modifier.animateItem(),
                             reason = if (mode == FeedMode.FOR_YOU || mode == FeedMode.DISCOVER || mode == FeedMode.SMALL) r.reasons.firstOrNull() else null)

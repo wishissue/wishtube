@@ -25,11 +25,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.heading
@@ -75,10 +78,62 @@ fun isOnline(ctx: Context): Boolean {
 }
 
 @Composable
-fun feedCells(): GridCells = GridCells.Adaptive(if (LocalCompact.current) 420.dp else 340.dp)
+fun isFullBleed(): Boolean {
+    val compact = LocalCompact.current
+    val config = LocalConfiguration.current
+    return !compact && config.screenWidthDp < 600
+}
 
 @Composable
-fun feedSpacing(): Dp = if (LocalCompact.current) 4.dp else 12.dp
+fun feedCells(): GridCells {
+    val compact = LocalCompact.current
+    if (compact) return GridCells.Adaptive(420.dp)
+    val width = LocalConfiguration.current.screenWidthDp
+    return if (width < 600) GridCells.Fixed(1) else GridCells.Fixed((width / 300).coerceIn(2, 4))
+}
+
+@Composable
+fun feedPadding(): PaddingValues {
+    val full = isFullBleed()
+    val compact = LocalCompact.current
+    return when {
+        full -> PaddingValues(bottom = 8.dp)
+        compact -> PaddingValues(8.dp)
+        else -> PaddingValues(12.dp)
+    }
+}
+
+@Composable
+fun feedHGap(): Dp {
+    val full = isFullBleed()
+    val compact = LocalCompact.current
+    return when {
+        full -> 0.dp
+        compact -> 8.dp
+        else -> 12.dp
+    }
+}
+
+@Composable
+fun feedSpacing(): Dp {
+    val full = isFullBleed()
+    val compact = LocalCompact.current
+    return when {
+        full -> 12.dp
+        compact -> 4.dp
+        else -> 16.dp
+    }
+}
+
+fun Modifier.bleedHorizontal(amount: Dp): Modifier = this.layout { measurable, constraints ->
+    val px = amount.roundToPx()
+    val placeable = measurable.measure(constraints.copy(
+        maxWidth = constraints.maxWidth + px * 2
+    ))
+    layout(placeable.width - px * 2, placeable.height) {
+        placeable.place(-px, 0)
+    }
+}
 
 @Composable
 fun shimmerBrush(): Brush {
@@ -93,13 +148,29 @@ fun shimmerBrush(): Brush {
 @Composable
 fun SkeletonCard(modifier: Modifier = Modifier) {
     val brush = shimmerBrush()
-    GlassSurface(modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Box(Modifier.fillMaxWidth().aspectRatio(16 / 9f).clip(RoundedCornerShape(18.dp)).background(brush))
-            Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth(0.85f).height(16.dp).clip(RoundedCornerShape(8.dp)).background(brush))
+    val full = isFullBleed()
+    val compact = LocalCompact.current
+    if (compact || !full) {
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(Modifier.fillMaxWidth().padding(if (compact) 8.dp else 4.dp)) {
+                Box(Modifier.fillMaxWidth().aspectRatio(16 / 9f).clip(RoundedCornerShape(12.dp)).background(brush))
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth(0.85f).height(16.dp).clip(RoundedCornerShape(8.dp)).background(brush))
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth(0.5f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(brush))
+            }
+        }
+    } else {
+        Column(modifier = modifier.fillMaxWidth()) {
+            Box(Modifier.fillMaxWidth().aspectRatio(16 / 9f).background(brush))
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.fillMaxWidth(0.85f).height(16.dp).clip(RoundedCornerShape(8.dp)).background(brush).padding(horizontal = 12.dp))
             Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth(0.5f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(brush))
+            Box(Modifier.fillMaxWidth(0.5f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(brush).padding(horizontal = 12.dp))
         }
     }
 }
@@ -109,16 +180,18 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
     val ctx = LocalContext.current
     val nav = LocalNav.current
     val compact = LocalCompact.current
+    val full = isFullBleed()
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
 
     @Composable
     fun Thumb(m: Modifier) {
-        Box(m.aspectRatio(16 / 9f).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
+        val shape = if (full) RectangleShape else RoundedCornerShape(12.dp)
+        Box(m.aspectRatio(16 / 9f).clip(shape).background(MaterialTheme.colorScheme.surfaceVariant)) {
             AsyncImage(model = video.thumbnail, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             val d = formatDuration(video.durationSec)
             if (d.isNotEmpty()) Text(d, color = Color.White, style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).clip(RoundedCornerShape(4.dp))
+                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).clip(RoundedCornerShape(4.dp))
                     .background(Color(0xDD000000)).padding(horizontal = 6.dp, vertical = 2.dp))
         }
     }
@@ -179,23 +252,38 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
         }
     }
 
-    val shape = RoundedCornerShape(12.dp)
-    Surface(
-        modifier = modifier.fillMaxWidth().clickable(onClickLabel = "Watch ${video.title}", onClick = onClick),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surface
-    ) {
-        if (compact) {
+    if (compact) {
+        Surface(
+            modifier = modifier.fillMaxWidth().clickable(onClickLabel = "Watch ${video.title}", onClick = onClick),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
             Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.Top) {
                 Thumb(Modifier.width(160.dp))
                 Texts(Modifier.weight(1f).padding(start = 12.dp))
                 MenuButton()
             }
-        } else {
-            Column(Modifier.fillMaxWidth().padding(8.dp)) {
-                Thumb(Modifier.fillMaxWidth())
-                Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.Top) {
-                    Texts(Modifier.weight(1f))
+        }
+    } else if (full) {
+        Column(
+            modifier = modifier.fillMaxWidth().clickable(onClickLabel = "Watch ${video.title}", onClick = onClick)
+        ) {
+            Thumb(Modifier.fillMaxWidth())
+            Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 10.dp, bottom = 4.dp), verticalAlignment = Alignment.Top) {
+                Texts(Modifier.weight(1f))
+                MenuButton()
+            }
+        }
+    } else {
+        Surface(
+            modifier = modifier.fillMaxWidth().clickable(onClickLabel = "Watch ${video.title}", onClick = onClick),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(Modifier.fillMaxWidth().padding(4.dp)) {
+                Thumb(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)))
+                Row(Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.Top) {
+                    Texts(Modifier.weight(1f).padding(start = 4.dp))
                     MenuButton()
                 }
             }
