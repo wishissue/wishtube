@@ -1,0 +1,24 @@
+name: Bug Report
+description: File a bug report to help us improve WishTube
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the issue...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: 1. Go to... 2. Tap on...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Device & Android Version
+      description: What device and Android version are you running?
+      placeholder: Pixel 7, Android 15

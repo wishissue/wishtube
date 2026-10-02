@@ -1,0 +1,11 @@
+WishTube is a local-first, privacy-focused Android universal media client that unifies PeerTube, Odysee, Internet Archive, media.ccc.de, and Wikimedia Commons into a single, polished application.
+
+No account required, no tracking, no cloud servers. Profiles, watch history, saved items, playlists, private notes, offline downloads, and local recommendation signals remain 100% on device.
+
+Features:
+- Unified multi-source search and discovery
+- Local-first recommendation engine
+- Optional mature content filter
+- License-aware rights management and restricted download protection
+- Robust AndroidX Media3 playback engine
+- Offline downloads and local Room database

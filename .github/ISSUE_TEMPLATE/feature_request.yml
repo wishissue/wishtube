@@ -1,0 +1,19 @@
+name: Feature Request
+description: Suggest a feature or improvement for WishTube
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Description of Solution
+      description: Describe the solution you'd like.
+      placeholder: Describe the feature...
+    validations:
+      required: true

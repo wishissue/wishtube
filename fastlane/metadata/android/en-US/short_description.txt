@@ -1,0 +1,1 @@
+Privacy-focused universal media client for PeerTube, Odysee, and archives.
