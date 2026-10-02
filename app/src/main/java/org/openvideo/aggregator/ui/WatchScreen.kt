@@ -13,6 +13,7 @@ import android.net.Uri
 import android.util.Rational
 import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -257,184 +258,81 @@ private fun PlayerArea(
 ) {
     val ctx = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    var isPlaying by remember { mutableStateOf(exo.isPlaying) }
-    var currentPosition by remember { mutableStateOf(exo.currentPosition) }
-    var duration by remember { mutableStateOf(exo.duration.coerceAtLeast(1L)) }
-    var controlsVisible by remember { mutableStateOf(true) }
 
-    DisposableEffect(exo) {
-        val l = object : Player.Listener {
-            override fun onIsPlayingChanged(playing: Boolean) { isPlaying = playing }
-            override fun onPlaybackStateChanged(state: Int) { duration = exo.duration.coerceAtLeast(1L) }
-        }
-        exo.addListener(l)
-        onDispose { exo.removeListener(l) }
-    }
-
-    LaunchedEffect(exo) {
-        while (true) {
-            currentPosition = exo.currentPosition
-            duration = exo.duration.coerceAtLeast(1L)
-            delay(400)
-        }
-    }
-
-    Box(modifier.background(Color.Black).pointerInput(Unit) {
-        detectTapGestures(onTap = { controlsVisible = !controlsVisible })
-    }) {
+    Box(modifier.background(Color.Black)) {
         AndroidView(
             factory = { context ->
                 PlayerView(context).apply {
                     player = exo
-                    useController = false
-                    layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                    useController = true
+                    setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
                 }
             },
             update = { it.player = exo },
-            onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Custom Overlay Controls
-        AnimatedVisibility(
-            visible = controlsVisible || resolving || error != null,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.fillMaxSize()
+        // Top WishTube Liquid Glass Bar Overlay
+        Row(
+            modifier = Modifier.align(Alignment.TopStart).fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(Modifier.fillMaxSize().background(Color(0x66000000))) {
-                // Top Bar
-                Row(
-                    modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    GlassSurface(
-                        shape = RoundedCornerShape(20.dp),
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            onBack()
-                        }
-                    ) {
-                        Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                        }
-                    }
-                    Text(
-                        video.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f).padding(horizontal = 12.dp)
+            GlassSurface(
+                shape = RoundedCornerShape(20.dp),
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onBack()
+                }
+            ) {
+                Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                }
+            }
+            GlassSurface(
+                shape = RoundedCornerShape(20.dp),
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onFullscreen(!fullscreen)
+                }
+            ) {
+                Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        if (fullscreen) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen,
+                        "Fullscreen",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
                     )
-                    GlassSurface(
-                        shape = RoundedCornerShape(20.dp),
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            onFullscreen(!fullscreen)
-                        }
-                    ) {
-                        Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
-                            Icon(
-                                if (fullscreen) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen,
-                                "Fullscreen",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
                 }
+            }
+        }
 
-                // Center Play/Pause & Seek Controls
-                if (error == null && !resolving) {
-                    Row(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalArrangement = Arrangement.spacedBy(32.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                exo.seekTo((exo.currentPosition - 10_000).coerceAtLeast(0))
-                            },
-                            modifier = Modifier.size(56.dp).background(Color(0x88000000), RoundedCornerShape(32.dp))
-                        ) {
-                            Icon(Icons.Rounded.Replay10, "Rewind 10s", tint = Color.White, modifier = Modifier.size(28.dp))
-                        }
-                        val scale by animateFloatAsState(if (isPlaying) 1f else 1.08f, label = "playScale")
-                        IconButton(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                if (exo.isPlaying) exo.pause() else exo.play()
-                            },
-                            modifier = Modifier.size(76.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(38.dp)).scale(scale)
-                        ) {
-                            Icon(
-                                if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                if (isPlaying) "Pause" else "Play",
-                                tint = Color.White,
-                                modifier = Modifier.size(44.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                exo.seekTo((exo.currentPosition + 10_000).coerceAtMost(duration))
-                            },
-                            modifier = Modifier.size(56.dp).background(Color(0x88000000), RoundedCornerShape(32.dp))
-                        ) {
-                            Icon(Icons.Rounded.Forward10, "Forward 10s", tint = Color.White, modifier = Modifier.size(28.dp))
-                        }
-                    }
-                }
+        if (resolving) {
+            Box(Modifier.fillMaxSize().background(Color(0xCC1C1917)), contentAlignment = Alignment.Center) {
+                FunLoader("Brewing your stream...")
+            }
+        }
 
-                if (resolving) {
-                    Box(Modifier.align(Alignment.Center)) {
-                        FunLoader("Preparing cozy stream...")
-                    }
-                }
-
-                if (error != null) {
-                    Column(
-                        Modifier.fillMaxSize().background(Color(0xCC000000)).padding(24.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("This video couldn't be played.", color = Color.White, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                        Spacer(Modifier.height(8.dp))
-                        Text(error, color = Color(0xFFCCCCCC), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, maxLines = 3)
-                        Spacer(Modifier.height(16.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Button(onClick = onRetry) { Text("Retry") }
-                            OutlinedButton(onClick = { openUrl(ctx, video.sourceUrl) }) { Text("Open on ${video.source.label}") }
-                        }
-                    }
-                }
-
-                // Bottom Progress Bar & Time
-                if (error == null && !resolving) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(formatDuration(currentPosition / 1000), style = MaterialTheme.typography.bodySmall, color = Color.White)
-                            Text(formatDuration(duration / 1000), style = MaterialTheme.typography.bodySmall, color = Color.White)
-                        }
-                        Slider(
-                            value = currentPosition.toFloat(),
-                            onValueChange = { currentPosition = it.toLong() },
-                            onValueChangeFinished = { exo.seekTo(currentPosition) },
-                            valueRange = 0f..duration.toFloat(),
-                            colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                            )
-                        )
+        if (error != null) {
+            GlassSurface(
+                modifier = Modifier.align(Alignment.Center).padding(24.dp).fillMaxWidth(),
+                shape = RoundedCornerShape(32.dp)
+            ) {
+                Column(
+                    Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(Icons.Rounded.CloudOff, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.height(12.dp))
+                    Text("Couldn't play this media", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(6.dp))
+                    Text(error, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, maxLines = 3)
+                    Spacer(Modifier.height(20.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(onClick = onRetry, shape = RoundedCornerShape(20.dp)) { Text("Retry") }
+                        OutlinedButton(onClick = { openUrl(ctx, video.sourceUrl) }, shape = RoundedCornerShape(20.dp)) { Text("Open on ${video.source.label}") }
                     }
                 }
             }
