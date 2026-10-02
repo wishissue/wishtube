@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
 import androidx.compose.material.icons.outlined.*
@@ -84,7 +86,7 @@ private fun applyPlaybackPrefs(player: Player, up: UserPrefs) {
 
 @SuppressLint("ProduceStateDoesNotAssignValue")
 @Composable
-fun WatchScreen(videoId: String, vm: AppViewModel, pad: PaddingValues, onOpenVideo: (Video) -> Unit) {
+fun WatchScreen(videoId: String, vm: AppViewModel, pad: PaddingValues, onBack: () -> Unit, onOpenVideo: (Video) -> Unit) {
     val c = vm.container
     val video by produceState<Video?>(c.sources.known[videoId], videoId) {
         val vLoaded = c.sources.known[videoId] ?: c.dao.video(videoId)?.toVideo()
@@ -92,14 +94,14 @@ fun WatchScreen(videoId: String, vm: AppViewModel, pad: PaddingValues, onOpenVid
     }
     val v = video
     if (v == null) {
-        Box(Modifier.fillMaxSize().padding(pad), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        Box(Modifier.fillMaxSize().padding(pad), contentAlignment = Alignment.Center) { FunLoader("Loading video...") }
         return
     }
-    WatchContent(v, vm, pad, onOpenVideo)
+    WatchContent(v, vm, pad, onBack, onOpenVideo)
 }
 
 @Composable
-private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onOpenVideo: (Video) -> Unit) {
+private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onBack: () -> Unit, onOpenVideo: (Video) -> Unit) {
     val ctx = LocalContext.current
     val c = vm.container
     val exo = c.player
@@ -141,7 +143,9 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
             ctrl?.show(WindowInsetsCompat.Type.systemBars())
         }
     }
-    BackHandler(fullscreen) { fullscreen = false }
+    BackHandler {
+        if (fullscreen) fullscreen = false else onBack()
+    }
 
     // Resolve the stream and start playback. Downloaded files play offline without any network call.
     LaunchedEffect(video.id, attempt, streamIndex) {
@@ -216,7 +220,7 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
         attempt++
     }
     val playerBox: @Composable (Modifier) -> Unit = { m ->
-        PlayerArea(video, exo, m, resolving, loadError ?: playerError, gestures, retry) { fullscreen = it }
+        PlayerArea(video, exo, m, resolving, loadError ?: playerError, gestures, retry, { fullscreen = it }, onBack)
     }
 
     when {
@@ -235,7 +239,7 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
 @Composable
 private fun PlayerArea(
     video: Video, exo: Player, modifier: Modifier, resolving: Boolean, error: String?, gestures: Boolean,
-    onRetry: () -> Unit, onFullscreen: (Boolean) -> Unit,
+    onRetry: () -> Unit, onFullscreen: (Boolean) -> Unit, onBack: () -> Unit,
 ) {
     val ctx = LocalContext.current
     var view by remember { mutableStateOf<PlayerView?>(null) }
@@ -252,6 +256,14 @@ private fun PlayerArea(
             onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize(),
         )
+        // Floating Back button in top-left corner
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                .background(Color(0x88000000), shape = RoundedCornerShape(24.dp))
+        ) {
+            Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = Color.White)
+        }
         // Double-tap left/right sides to seek 10s. The middle and bottom stay free for the controller.
         if (gestures) Row(Modifier.fillMaxWidth().fillMaxHeight(0.7f).align(Alignment.TopCenter)) {
             val toggle: () -> Unit = { view?.let { if (it.isControllerFullyVisible) it.hideController() else it.showController() } }

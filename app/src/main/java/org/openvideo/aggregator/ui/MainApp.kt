@@ -172,7 +172,7 @@ private fun AppScaffold(vm: AppViewModel, reduce: Boolean) {
                         CreatorScreen(e.arguments?.getString("key").orEmpty(), vm, pad, actions) { nav.popBackStack() }
                     }
                     composable("watch/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
-                        WatchScreen(e.arguments?.getString("id").orEmpty(), vm, pad) { actions.openVideo(it) }
+                        WatchScreen(e.arguments?.getString("id").orEmpty(), vm, pad, { nav.popBackStack() }) { actions.openVideo(it) }
                     }
                 }
             }
