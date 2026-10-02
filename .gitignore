@@ -6,6 +6,7 @@ app/build/
 
 # Local configuration
 local.properties
+keystore.properties
 
 # IDE & OS files
 .idea/
@@ -14,9 +15,13 @@ local.properties
 Thumbs.db
 .kotlin/
 
+# Output & Release artifacts
+output/
+*.jks
+*.keystore
+
 # Android Studio / Gradle generated
 *.ap_
 *.apk
 *.aab
 *.dex
-!output/*.apk

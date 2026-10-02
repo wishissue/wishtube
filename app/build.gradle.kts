@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,6 +7,26 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
+fun getReleaseProperty(key: String, envKey: String): String? {
+    return localProperties.getProperty(key)
+        ?.takeIf { it.isNotBlank() }
+        ?: System.getenv(envKey)?.takeIf { it.isNotBlank() }
+}
+
+val storeFileProp = getReleaseProperty("storeFile", "WISHTUBE_STORE_FILE")
+val storePasswordProp = getReleaseProperty("storePassword", "WISHTUBE_STORE_PASSWORD")
+val keyAliasProp = getReleaseProperty("keyAlias", "WISHTUBE_KEY_ALIAS")
+val keyPasswordProp = getReleaseProperty("keyPassword", "WISHTUBE_KEY_PASSWORD")
+
+val hasReleaseSigning = storeFileProp != null && storePasswordProp != null && keyAliasProp != null && keyPasswordProp != null
 
 android {
     namespace = "app.wishtube"
@@ -16,11 +38,26 @@ android {
         versionCode = 1
         versionName = "0.1.0"
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(storeFileProp!!)
+                storePassword = storePasswordProp
+                keyAlias = keyAliasProp
+                keyPassword = keyPasswordProp
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                logger.warn("WARNING: Release signing configuration missing. Building unsigned release APKs. Configure WISHTUBE_STORE_FILE, WISHTUBE_STORE_PASSWORD, WISHTUBE_KEY_ALIAS, WISHTUBE_KEY_PASSWORD in local.properties or environment variables to sign release builds.")
+                signingConfig = null
+            }
         }
     }
     splits {
