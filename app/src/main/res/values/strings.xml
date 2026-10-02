@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">WishTube</string>
+    <string name="home_title">WishTube</string>
+    <string name="discover_title">Discover</string>
+    <string name="following_title">Following</string>
+    <string name="library_title">Library</string>
+    <string name="search_title">Search</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_save_instance">Save instance</string>
+    <string name="settings_show_mature">Show mature content</string>
+    <string name="settings_show_mature_desc">Allow adult or age-restricted content in search and feeds.</string>
+    <string name="notif_denied_explanation">Notifications are disabled. Creator updates will not appear as status bar notifications.</string>
+    <string name="license_notice">License information is provided by the source for informational purposes.</string>
 </resources>

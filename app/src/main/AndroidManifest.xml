@@ -10,6 +10,8 @@
     <application
         android:name=".App"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
@@ -51,6 +53,7 @@
             </intent-filter>
         </activity>
 
+        <!-- PlaybackService requires exported="true" for system media controls and MediaSession integration -->
         <service
             android:name=".PlaybackService"
             android:exported="true"
