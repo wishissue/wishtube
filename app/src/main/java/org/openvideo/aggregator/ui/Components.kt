@@ -92,12 +92,14 @@ fun shimmerBrush(): Brush {
 @Composable
 fun SkeletonCard(modifier: Modifier = Modifier) {
     val brush = shimmerBrush()
-    Column(modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().aspectRatio(16 / 9f).clip(RoundedCornerShape(16.dp)).background(brush))
-        Spacer(Modifier.height(10.dp))
-        Box(Modifier.fillMaxWidth(0.85f).height(14.dp).clip(RoundedCornerShape(6.dp)).background(brush))
-        Spacer(Modifier.height(8.dp))
-        Box(Modifier.fillMaxWidth(0.5f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(brush))
+    GlassSurface(modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+            Box(Modifier.fillMaxWidth().aspectRatio(16 / 9f).clip(RoundedCornerShape(18.dp)).background(brush))
+            Spacer(Modifier.height(12.dp))
+            Box(Modifier.fillMaxWidth(0.85f).height(16.dp).clip(RoundedCornerShape(8.dp)).background(brush))
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth(0.5f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(brush))
+        }
     }
 }
 
@@ -111,12 +113,12 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
 
     @Composable
     fun Thumb(m: Modifier) {
-        Box(m.aspectRatio(16 / 9f).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
+        Box(m.aspectRatio(16 / 9f).clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
             AsyncImage(model = video.thumbnail, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             val d = formatDuration(video.durationSec)
             if (d.isNotEmpty()) Text(d, color = Color.White, style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xCC000000)).padding(horizontal = 6.dp, vertical = 2.dp))
+                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xCC000000)).padding(horizontal = 8.dp, vertical = 3.dp))
         }
     }
 
@@ -154,20 +156,21 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
         }
     }
 
-    val shape = RoundedCornerShape(16.dp)
-    if (compact) {
-        Row(modifier.fillMaxWidth().clip(shape).clickable(onClickLabel = "Watch ${video.title}", onClick = onClick).padding(vertical = 4.dp),
-            verticalAlignment = Alignment.Top) {
-            Thumb(Modifier.width(150.dp))
-            Texts(Modifier.weight(1f).padding(start = 12.dp))
-            MenuButton()
-        }
-    } else {
-        Column(modifier.fillMaxWidth().clip(shape).clickable(onClickLabel = "Watch ${video.title}", onClick = onClick).padding(bottom = 6.dp)) {
-            Thumb(Modifier.fillMaxWidth())
-            Row(Modifier.padding(start = 4.dp, top = 10.dp), verticalAlignment = Alignment.Top) {
-                Texts(Modifier.weight(1f))
+    val shape = RoundedCornerShape(24.dp)
+    GlassSurface(modifier = modifier.fillMaxWidth(), shape = shape, onClick = onClick) {
+        if (compact) {
+            Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.Top) {
+                Thumb(Modifier.width(150.dp))
+                Texts(Modifier.weight(1f).padding(start = 14.dp))
                 MenuButton()
+            }
+        } else {
+            Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                Thumb(Modifier.fillMaxWidth())
+                Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.Top) {
+                    Texts(Modifier.weight(1f))
+                    MenuButton()
+                }
             }
         }
     }
