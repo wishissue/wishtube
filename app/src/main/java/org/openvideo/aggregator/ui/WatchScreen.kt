@@ -143,9 +143,16 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onB
             ctrl?.show(WindowInsetsCompat.Type.systemBars())
         }
     }
-    BackHandler {
-        if (fullscreen) fullscreen = false else onBack()
+    val handleBack: () -> Unit = {
+        if (fullscreen) {
+            fullscreen = false
+            ctx.findActivity()?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        } else {
+            ctx.findActivity()?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            onBack()
+        }
     }
+    BackHandler(onBack = handleBack)
 
     // Resolve the stream and start playback. Downloaded files play offline without any network call.
     LaunchedEffect(video.id, attempt, streamIndex) {
@@ -242,6 +249,7 @@ private fun PlayerArea(
     onRetry: () -> Unit, onFullscreen: (Boolean) -> Unit, onBack: () -> Unit,
 ) {
     val ctx = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     var view by remember { mutableStateOf<PlayerView?>(null) }
     Box(modifier.background(Color.Black)) {
         AndroidView(
@@ -256,13 +264,18 @@ private fun PlayerArea(
             onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize(),
         )
-        // Floating Back button in top-left corner
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
-                .background(Color(0x88000000), shape = RoundedCornerShape(24.dp))
+        // Cute floating Back button in top-left corner with warm glass badge
+        GlassSurface(
+            modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
+            shape = RoundedCornerShape(20.dp),
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onBack()
+            }
         ) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = Color.White)
+            Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            }
         }
         // Double-tap left/right sides to seek 10s. The middle and bottom stay free for the controller.
         if (gestures) Row(Modifier.fillMaxWidth().fillMaxHeight(0.7f).align(Alignment.TopCenter)) {
