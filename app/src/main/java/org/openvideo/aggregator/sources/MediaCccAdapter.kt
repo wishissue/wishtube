@@ -13,12 +13,22 @@ import java.time.Instant
 class MediaCccAdapter : VideoSource {
     override val id = SourceId.MEDIA_CCC
     override val capabilities = SourceCapabilities(search = true, downloads = true)
+    private val pageSize = 20
+
+    private var cachedEvents: List<JsonObject>? = null
+    private var cacheTime: Long = 0L
 
     private suspend fun fetchEvents(): List<JsonObject> {
-        val root = Http.getJson("https://api.media.ccc.de/public/events")
-        val obj = root.obj() ?: return emptyList()
-        val events = obj["events"] as? JsonArray ?: return emptyList()
-        return events.mapNotNull { it.obj() }
+        val now = System.currentTimeMillis()
+        cachedEvents?.let { if (now - cacheTime < 300_000) return it }
+        return runCatching {
+            val root = Http.getJson("https://api.media.ccc.de/public/events")
+            val obj = root.obj() ?: return@runCatching emptyList()
+            val events = (obj["events"] as? JsonArray)?.mapNotNull { it.obj() }.orEmpty()
+            cachedEvents = events
+            cacheTime = now
+            events
+        }.getOrDefault(emptyList())
     }
 
     override suspend fun search(query: String, page: Int, sort: SearchSort): List<Video> {
@@ -30,7 +40,7 @@ class MediaCccAdapter : VideoSource {
             val subtitle = e["subtitle"].str().orEmpty().lowercase()
             title.contains(q) || desc.contains(q) || subtitle.contains(q)
         }
-        return filtered.mapNotNull { parseEvent(it) }
+        return filtered.drop(page * pageSize).take(pageSize).mapNotNull { parseEvent(it) }
     }
 
     override suspend fun feed(page: Int, sort: FeedSort): List<Video> {
@@ -40,7 +50,7 @@ class MediaCccAdapter : VideoSource {
         } else {
             all.sortedByDescending { e -> e["view_count"].long() ?: 0L }
         }
-        return sorted.mapNotNull { parseEvent(it) }
+        return sorted.drop(page * pageSize).take(pageSize).mapNotNull { parseEvent(it) }
     }
 
     override suspend fun creatorVideos(creatorId: String, page: Int): List<Video> {
@@ -49,7 +59,7 @@ class MediaCccAdapter : VideoSource {
             val persons = (e["persons"] as? JsonArray)?.mapNotNull { it.str() }.orEmpty()
             persons.any { it.equals(creatorId, ignoreCase = true) }
         }
-        return filtered.mapNotNull { parseEvent(it) }
+        return filtered.drop(page * pageSize).take(pageSize).mapNotNull { parseEvent(it) }
     }
 
     override suspend fun creatorInfo(creatorId: String): CreatorInfo? =
@@ -77,7 +87,7 @@ class MediaCccAdapter : VideoSource {
     }
 
     private fun parseEvent(e: JsonObject): Video? {
-        val guid = e["guid"].str() ?: e["id"].str()?.let { it.toString() } ?: return null
+        val guid = e["guid"].str() ?: e["id"].str() ?: return null
         val title = e["title"].str() ?: return null
         val desc = e["description"].str() ?: e["subtitle"].str().orEmpty()
         val persons = (e["persons"] as? JsonArray)?.mapNotNull { it.str() }.orEmpty()
