@@ -23,6 +23,7 @@ data class ProfileSignals(
     val hiddenTopics: Set<String> = emptySet(),
     val seen: Set<String> = emptySet(),
     val notInterested: Set<String> = emptySet(),
+    val selectedInterests: Set<String> = emptySet(),
 )
 
 data class Ranked(val video: Video, val score: Float, val reasons: List<String>)
@@ -67,6 +68,10 @@ object RecommendationEngine {
         val topics = Topics.of(v)
         val topic = if (topics.isEmpty()) 0f else tanh(
             topics.sumOf { (sig.topicAffinity[it] ?: 0f).toDouble() } / (2.0 + sqrt(topics.size.toDouble()))).toFloat()
+        val interestMatch = if (sig.selectedInterests.isEmpty()) 0f else {
+            val matches = topics.count { t -> sig.selectedInterests.any { i -> t.contains(i.lowercase()) || i.lowercase().contains(t) } }
+            (matches.toFloat() / sig.selectedInterests.size.coerceAtLeast(1)).coerceIn(0f, 1f)
+        }
         val creatorFam = tanh((sig.creatorAffinity[v.creatorKey] ?: 0f).toDouble()).toFloat()
         val subscribed = if (v.creatorKey in sig.followed) 1f else 0f
         val isNew = v.creatorKey !in sig.creatorAffinity && subscribed == 0f
@@ -84,13 +89,14 @@ object RecommendationEngine {
 
         val s = when (mode) {
             FeedMode.DISCOVER -> (if (isNew) 1f else 0f) + (1f - topic.coerceAtLeast(0f)) * 0.8f +
-                recency * 0.3f + rand * 0.3f - seenPenalty - creatorFam.coerceAtLeast(0f) * 0.5f
+                recency * 0.3f + rand * 0.3f - seenPenalty - creatorFam.coerceAtLeast(0f) * 0.5f + interestMatch * 0.5f
             FeedMode.SMALL -> small * 2f + recency * 0.5f + topic.coerceAtLeast(0f) * 0.3f + rand * 0.2f - seenPenalty
-            else -> w.topic * topic * 2f + w.creator * creatorFam + w.subscribed * subscribed +
+            else -> w.topic * topic * 2f + interestMatch * 1.5f + w.creator * creatorFam + w.subscribed * subscribed +
                 w.newCreators * (if (isNew) 0.6f else 0f) + w.popularity * pop + w.recency * recency +
                 w.smallCreators * small * 0.6f + w.randomness * rand * 1.5f + length * 0.3f - seenPenalty
         }
         val why = buildList {
+            if (interestMatch > 0f) add("Matches your selected interests")
             if (subscribed > 0) add("From a creator you follow")
             if (topic > 0.25f) add("Matches topics you watch")
             if (creatorFam > 0.3f) add("You've watched this creator before")

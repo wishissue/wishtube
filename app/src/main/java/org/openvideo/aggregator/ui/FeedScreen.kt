@@ -73,7 +73,8 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun rank(mode: FeedMode, pid: Long, w: RecWeights, loading: Boolean, errors: Map<SourceId, String>?) {
-        val sig = c.library.signals(pid)
+        val interests = c.userPrefs.selectedInterests.value
+        val sig = c.library.signals(pid, interests)
         val ranked = withContext(Dispatchers.Default) { RecommendationEngine.rank(raw, sig, w, mode) }
         _state.update { it.copy(items = ranked, loading = loading, errors = errors ?: it.errors) }
         // Prefetch the first thumbnails so scrolling feels instant.

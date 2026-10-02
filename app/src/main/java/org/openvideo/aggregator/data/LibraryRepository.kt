@@ -84,7 +84,7 @@ class LibraryRepository(private val db: AppDatabase) {
     }
 
     /** Derive compact recommendation signals from this profile's own library. */
-    suspend fun signals(p: Long): ProfileSignals {
+    suspend fun signals(p: Long, interests: Set<String> = emptySet()): ProfileSignals {
         val entries = dao.entriesNow(p)
         val vids = dao.videosByIds(entries.map { it.videoId }.distinct().take(400)).associateBy { it.id }
         val topic = HashMap<String, Float>(); val creator = HashMap<String, Float>()
@@ -112,6 +112,7 @@ class LibraryRepository(private val db: AppDatabase) {
             hiddenCreators = dao.hiddenCreatorsNow(p).map { it.creatorKey }.toSet(),
             hiddenTopics = dao.hiddenTopicsNow(p).map { it.topic }.toSet(),
             seen = seen, notInterested = ni,
+            selectedInterests = interests
         )
     }
 }

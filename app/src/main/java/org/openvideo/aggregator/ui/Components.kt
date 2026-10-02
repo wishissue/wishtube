@@ -114,12 +114,12 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
 
     @Composable
     fun Thumb(m: Modifier) {
-        Box(m.aspectRatio(16 / 9f).clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
+        Box(m.aspectRatio(16 / 9f).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
             AsyncImage(model = video.thumbnail, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             val d = formatDuration(video.durationSec)
             if (d.isNotEmpty()) Text(d, color = Color.White, style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xCC000000)).padding(horizontal = 8.dp, vertical = 3.dp))
+                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xDD000000)).padding(horizontal = 6.dp, vertical = 2.dp))
         }
     }
 
@@ -131,7 +131,7 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
         }
         Surface(
             color = color.copy(alpha = 0.15f),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(6.dp)
         ) {
             Text(
                 video.license.name,
@@ -146,7 +146,7 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
     fun Texts(m: Modifier) {
         Column(m, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(video.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(video.creator, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Text("${video.creator} • ${video.source.label}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = if (nav != null) Modifier.clickable(onClickLabel = "Open creator ${video.creator}") { nav.openCreator(video) } else Modifier)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -179,18 +179,22 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
         }
     }
 
-    val shape = RoundedCornerShape(24.dp)
-    GlassSurface(modifier = modifier.fillMaxWidth(), shape = shape, onClick = onClick) {
+    val shape = RoundedCornerShape(12.dp)
+    Surface(
+        modifier = modifier.fillMaxWidth().clickable(onClickLabel = "Watch ${video.title}", onClick = onClick),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surface
+    ) {
         if (compact) {
-            Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.Top) {
-                Thumb(Modifier.width(150.dp))
-                Texts(Modifier.weight(1f).padding(start = 14.dp))
+            Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.Top) {
+                Thumb(Modifier.width(160.dp))
+                Texts(Modifier.weight(1f).padding(start = 12.dp))
                 MenuButton()
             }
         } else {
-            Column(Modifier.fillMaxWidth().padding(12.dp)) {
+            Column(Modifier.fillMaxWidth().padding(8.dp)) {
                 Thumb(Modifier.fillMaxWidth())
-                Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.Top) {
+                Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.Top) {
                     Texts(Modifier.weight(1f))
                     MenuButton()
                 }

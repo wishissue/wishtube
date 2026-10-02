@@ -49,8 +49,16 @@ fun MainApp(vm: AppViewModel = viewModel()) {
     val reduce by vm.prefs.reduceMotion.collectAsStateWithLifecycle()
     val dynamic by vm.prefs.dynamicColor.collectAsStateWithLifecycle()
     val compact by vm.prefs.compact.collectAsStateWithLifecycle()
+    val onboardingCompleted by vm.prefs.onboardingCompleted.collectAsStateWithLifecycle()
+
     OvaTheme(theme, reduce, dynamic) {
-        CompositionLocalProvider(LocalCompact provides compact) { AppScaffold(vm, reduce) }
+        CompositionLocalProvider(LocalCompact provides compact) {
+            if (!onboardingCompleted) {
+                OnboardingScreen(app = vm, onComplete = {})
+            } else {
+                AppScaffold(vm, reduce)
+            }
+        }
     }
 }
 
