@@ -356,19 +356,20 @@ private fun Details(video: Video, extra: StreamInfo?, vm: AppViewModel, modifier
             }
         }
         if (description.isNotBlank()) item {
-            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.fillMaxWidth().animateContentSize().clickable(onClickLabel = if (expanded) "Collapse description" else "Expand description") { expanded = !expanded }) {
-                Column(Modifier.padding(12.dp)) {
+            GlassSurface(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().animateContentSize().clickable(onClickLabel = if (expanded) "Collapse description" else "Expand description") { expanded = !expanded }) {
+                Column(Modifier.padding(16.dp)) {
                     Text("Description from ${video.source.label}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(4.dp))
                     Text(description, maxLines = if (expanded) Int.MAX_VALUE else 3, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
         note?.let { n ->
             item {
-                Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth().clickable(onClickLabel = "Edit note") { noteDialog = true }) {
-                    Column(Modifier.padding(12.dp)) {
+                GlassSurface(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().clickable(onClickLabel = "Edit note") { noteDialog = true }) {
+                    Column(Modifier.padding(16.dp)) {
                         Text("My note (private)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                        Spacer(Modifier.height(4.dp))
                         Text(n, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
