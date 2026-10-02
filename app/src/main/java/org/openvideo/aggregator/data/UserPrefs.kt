@@ -15,6 +15,7 @@ class UserPrefs(private val p: SharedPreferences) {
     val pip = MutableStateFlow(p.getBoolean("pip", true))
     val gestures = MutableStateFlow(p.getBoolean("gestures", true))
     val creatorUpdates = MutableStateFlow(p.getBoolean("creatorUpdates", false))
+    val glassEffects = MutableStateFlow(p.getBoolean("glassEffects", true))
     /** 0 = auto, 1 = 1080p, 2 = 720p, 3 = 480p, 4 = 360p */
     val quality = MutableStateFlow(p.getInt("quality", 0))
     val speed = MutableStateFlow(p.getFloat("speed", 1f))

@@ -52,6 +52,7 @@ fun SettingsScreen(app: AppViewModel, pad: PaddingValues, onBack: () -> Unit) {
     val dynamic by up.dynamicColor.collectAsStateWithLifecycle()
     val compact by up.compact.collectAsStateWithLifecycle()
     val reduce by up.reduceMotion.collectAsStateWithLifecycle()
+    val glassEffects by up.glassEffects.collectAsStateWithLifecycle()
     val autoplay by up.autoplay.collectAsStateWithLifecycle()
     val autoplayNext by up.autoplayNext.collectAsStateWithLifecycle()
     val captions by up.captions.collectAsStateWithLifecycle()
@@ -117,6 +118,7 @@ fun SettingsScreen(app: AppViewModel, pad: PaddingValues, onBack: () -> Unit) {
             if (Build.VERSION.SDK_INT >= 31) item { SwitchRow("Dynamic colors", "Use your wallpaper colors.", dynamic) { up.set("dynamic", up.dynamicColor, it) } }
             item { SwitchRow("Compact feed", "Smaller thumbnails, more videos per screen.", compact) { up.set("compact", up.compact, it) } }
             item { SwitchRow("Reduce motion", "Fewer transitions and no shimmer animation.", reduce) { up.set("reduceMotion", up.reduceMotion, it) } }
+            item { SwitchRow("Glass effects", "Real backdrop blur glass on bars and overlays.", glassEffects) { up.set("glassEffects", up.glassEffects, it) } }
 
             item { Section("Playback") }
             item { SwitchRow("Autoplay", "Start playing as soon as a video opens.", autoplay) { up.set("autoplay", up.autoplay, it) } }
