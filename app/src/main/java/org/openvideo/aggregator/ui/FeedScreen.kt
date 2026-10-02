@@ -102,7 +102,9 @@ fun FeedScreen(title: String, modes: List<FeedMode>, vmKey: String, app: AppView
     LaunchedEffect(mode, pid, followKey) { if (pid != null) feedVm.refresh(mode, pid, weights) }
     LaunchedEffect(weights) { if (pid != null) feedVm.reRank(mode, pid, weights) }
 
-    val visible = state.items.filter { it.video.id !in dismissed && it.video.creatorKey !in hidden }
+    val visible = remember(state.items, dismissed, hidden) {
+        state.items.filter { it.video.id !in dismissed && it.video.creatorKey !in hidden }
+    }
     val retry: () -> Unit = { if (pid != null) feedVm.refresh(mode, pid, weights) }
     val cells = feedCells()
     val gap = feedSpacing()
@@ -126,7 +128,7 @@ fun FeedScreen(title: String, modes: List<FeedMode>, vmKey: String, app: AppView
                 visible.isEmpty() -> EmptyState(Icons.Outlined.VideoLibrary, "Nothing here yet", "Pull down to refresh or try another mode.")
                 else -> LazyVerticalGrid(cells, contentPadding = PaddingValues(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(gap)) {
-                    items(visible, key = { it.video.id }) { r ->
+                    items(visible, key = { it.video.id }, contentType = { "video_card" }) { r ->
                         VideoCard(r.video, app, { nav.openVideo(r.video) }, Modifier.animateItem(),
                             reason = if (mode == FeedMode.FOR_YOU || mode == FeedMode.DISCOVER || mode == FeedMode.SMALL) r.reasons.firstOrNull() else null)
                     }

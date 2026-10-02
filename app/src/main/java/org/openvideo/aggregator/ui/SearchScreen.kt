@@ -73,7 +73,7 @@ fun SearchScreen(app: AppViewModel, pad: PaddingValues, nav: Nav, onBack: () -> 
     val requester = remember { FocusRequester() }
     val recent by app.recentSearches.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { if (vm.results == null) requester.requestFocus() }
-    val shown = vm.results?.filter { vm.duration.ok(it.durationSec) }
+    val shown = remember(vm.results, vm.duration) { vm.results?.filter { vm.duration.ok(it.durationSec) } }
     val cells = feedCells()
 
     fun submit() { vm.run(); app.recordSearch(vm.query); focus.clearFocus() }
@@ -121,7 +121,7 @@ fun SearchScreen(app: AppViewModel, pad: PaddingValues, nav: Nav, onBack: () -> 
                 shown.isEmpty() -> EmptyState(Icons.Outlined.SearchOff, "Nothing found", "Try another search or source.")
                 else -> LazyVerticalGrid(cells, contentPadding = PaddingValues(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(feedSpacing())) {
-                    items(shown, key = { it.id }) { v -> VideoCard(v, app, { nav.openVideo(v) }, Modifier.animateItem()) }
+                    items(shown, key = { it.id }, contentType = { "video_card" }) { v -> VideoCard(v, app, { nav.openVideo(v) }, Modifier.animateItem()) }
                 }
             }
         }
