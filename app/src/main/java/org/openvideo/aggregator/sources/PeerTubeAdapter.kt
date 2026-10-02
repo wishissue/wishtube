@@ -3,6 +3,7 @@ package org.openvideo.aggregator.sources
 import android.content.SharedPreferences
 import android.net.Uri
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -37,13 +38,28 @@ class PeerTubeAdapter(private val prefs: SharedPreferences) : VideoSource {
         return list(root, searchBase)
     }
 
-    override suspend fun feed(page: Int, sort: FeedSort): List<Video> {
+    private val defaultInstances = listOf(
+        "https://framatube.org",
+        "https://video.blender.org",
+        "https://peer.tube"
+    )
+
+    override suspend fun feed(page: Int, sort: FeedSort): List<Video> = coroutineScope {
         val base = feedInstance()
+        val instances = (listOf(base) + defaultInstances).distinct()
         val s = if (sort == FeedSort.NEWEST) "-publishedAt" else "-trending"
-        val root = Http.getJson(Http.url("$base/api/v1/videos",
-            "start" to (page * pageSize).toString(), "count" to pageSize.toString(),
-            "sort" to s, "nsfw" to "false"))
-        return list(root, base)
+        val deferred = instances.map { inst ->
+            async {
+                runCatching {
+                    val root = Http.getJson(Http.url("$inst/api/v1/videos",
+                        "start" to (page * (pageSize / instances.size).coerceAtLeast(5)).toString(),
+                        "count" to (pageSize / instances.size).coerceAtLeast(5).toString(),
+                        "sort" to s, "nsfw" to "false"))
+                    list(root, inst)
+                }.getOrDefault(emptyList())
+            }
+        }
+        deferred.awaitAll().flatten().distinctBy { it.id }
     }
 
     /** creatorId = "channelName@host" */

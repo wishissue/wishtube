@@ -1,6 +1,12 @@
 package org.openvideo.aggregator.domain
 
-enum class SourceId(val label: String) { PEERTUBE("PeerTube"), ODYSEE("Odysee") }
+enum class SourceId(val label: String) {
+    PEERTUBE("PeerTube"),
+    ODYSEE("Odysee"),
+    INTERNET_ARCHIVE("Internet Archive"),
+    MEDIA_CCC("media.ccc.de"),
+    WIKIMEDIA("Wikimedia Commons")
+}
 
 /** What a source can really do. The UI only shows features a source supports. */
 data class SourceCapabilities(

@@ -14,7 +14,13 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Runs queries across sources in parallel. One failing source never breaks the others. */
 class SourceManager(private val prefs: SharedPreferences) {
-    val sources: List<VideoSource> = listOf(PeerTubeAdapter(prefs), OdyseeAdapter())
+    val sources: List<VideoSource> = listOf(
+        PeerTubeAdapter(prefs),
+        OdyseeAdapter(),
+        InternetArchiveAdapter(),
+        MediaCccAdapter(),
+        WikimediaAdapter()
+    )
     /** In-memory registry of every video shown this session (used by the watch page). */
     val known = ConcurrentHashMap<String, Video>()
 
