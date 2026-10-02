@@ -88,3 +88,13 @@ sha256sum *.apk > SHA256SUMS.txt
 4. Select the tag `v0.1.0`.
 5. Attach the generated APKs and `SHA256SUMS.txt`.
 6. Publish the release.
+
+---
+
+## 6. GitHub Actions Automated Releases
+
+To enable automated builds and releases via `.github/workflows/release.yml`, configure the following repository secrets under **Settings > Secrets and variables > Actions**:
+- `WISHTUBE_KEYSTORE_BASE64`: Base64 encoded release keystore (`base64 -w 0 wishtube-release.keystore`)
+- `WISHTUBE_STORE_PASSWORD`: Keystore password
+- `WISHTUBE_KEY_ALIAS`: Key alias (`wishtube`)
+- `WISHTUBE_KEY_PASSWORD`: Key password
