@@ -227,7 +227,7 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onB
         attempt++
     }
     val playerBox: @Composable (Modifier) -> Unit = { m ->
-        PlayerArea(video, exo, m, resolving, loadError ?: playerError, gestures, retry, { fullscreen = it }, onBack)
+        PlayerArea(video, exo, m, resolving, loadError ?: playerError, gestures, retry, fullscreen, { fullscreen = it }, onBack)
     }
 
     when {
@@ -246,12 +246,11 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onB
 @Composable
 private fun PlayerArea(
     video: Video, exo: Player, modifier: Modifier, resolving: Boolean, error: String?, gestures: Boolean,
-    onRetry: () -> Unit, onFullscreen: (Boolean) -> Unit, onBack: () -> Unit,
+    onRetry: () -> Unit, fullscreen: Boolean, onFullscreen: (Boolean) -> Unit, onBack: () -> Unit,
 ) {
     val ctx = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var view by remember { mutableStateOf<PlayerView?>(null) }
-    var isFull by remember { mutableStateOf(false) }
 
     Box(modifier.background(Color.Black)) {
         AndroidView(
@@ -266,7 +265,7 @@ private fun PlayerArea(
             onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize(),
         )
-        // Top overlay bar with Back and Fullscreen toggle
+        // Top overlay bar with Back and Fullscreen toggle (clean, unified)
         Row(
             modifier = Modifier.align(Alignment.TopStart).fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -287,12 +286,11 @@ private fun PlayerArea(
                 shape = RoundedCornerShape(20.dp),
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    isFull = !isFull
-                    onFullscreen(isFull)
+                    onFullscreen(!fullscreen)
                 }
             ) {
                 Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
-                    Icon(if (isFull) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen, "Fullscreen", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                    Icon(if (fullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen, "Fullscreen", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                 }
             }
         }
