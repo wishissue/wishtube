@@ -55,8 +55,8 @@ android {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
-                logger.warn("WARNING: Release signing configuration missing. Building unsigned release APKs. Configure WISHTUBE_STORE_FILE, WISHTUBE_STORE_PASSWORD, WISHTUBE_KEY_ALIAS, WISHTUBE_KEY_PASSWORD in local.properties or environment variables to sign release builds.")
-                signingConfig = null
+                logger.warn("WARNING: Release signing configuration missing. Falling back to debug signing for local release build. Configure WISHTUBE_STORE_FILE, WISHTUBE_STORE_PASSWORD, WISHTUBE_KEY_ALIAS, WISHTUBE_KEY_PASSWORD in local.properties or environment variables to produce an officially signed release build.")
+                signingConfig = signingConfigs.getByName("debug")
             }
         }
     }
