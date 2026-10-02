@@ -17,21 +17,20 @@ import org.openvideo.aggregator.ui.findActivity
 val LocalReduceMotion = staticCompositionLocalOf { false }
 
 @Immutable class ExtraColors(val success: Color, val warning: Color)
-val LocalExtraColors = staticCompositionLocalOf { ExtraColors(Color(0xFF2E9E6B), Color(0xFFE0A100)) }
+val LocalExtraColors = staticCompositionLocalOf { ExtraColors(Color(0xFF4A7C59), Color(0xFFD4A373)) }
 
-// Semantic tokens live in the ColorScheme: background, surface, surfaceVariant, primary, secondary,
-// onSurface (textPrimary), onSurfaceVariant (textSecondary), outlineVariant (divider), error.
+// Cozy, warm, premium palette (cream, terracotta, sage, coffee brown)
 private val Light = lightColorScheme(
-    primary = Color(0xFF5B5BF0), onPrimary = Color.White, secondary = Color(0xFF0E7F74),
-    background = Color(0xFFF7F8FA), surface = Color(0xFFFFFFFF), surfaceVariant = Color(0xFFEBEDF2),
-    onSurface = Color(0xFF14161B), onSurfaceVariant = Color(0xFF5A6070), outlineVariant = Color(0xFFD9DCE3),
-    error = Color(0xFFD33A3A),
+    primary = Color(0xFFC25934), onPrimary = Color.White, secondary = Color(0xFF4A7C59),
+    background = Color(0xFFFAF7F2), surface = Color(0xFFFFFFFF), surfaceVariant = Color(0xFFF0ECE1),
+    onSurface = Color(0xFF2C2623), onSurfaceVariant = Color(0xFF6B605A), outlineVariant = Color(0xFFE2DCD3),
+    error = Color(0xFFBA3B46),
 )
 private val Dark = darkColorScheme(
-    primary = Color(0xFFA4A6FF), onPrimary = Color(0xFF14143A), secondary = Color(0xFF4FD6C7),
-    background = Color(0xFF0E0F13), surface = Color(0xFF16181D), surfaceVariant = Color(0xFF22252C),
-    onSurface = Color(0xFFEDEEF2), onSurfaceVariant = Color(0xFFA2A8B6), outlineVariant = Color(0xFF30343D),
-    error = Color(0xFFFF7B7B),
+    primary = Color(0xFFE07A5F), onPrimary = Color(0xFF2C150D), secondary = Color(0xFF81B29A),
+    background = Color(0xFF141210), surface = Color(0xFF1C1917), surfaceVariant = Color(0xFF282421),
+    onSurface = Color(0xFFF4F1EA), onSurfaceVariant = Color(0xFFA89F95), outlineVariant = Color(0xFF3B3531),
+    error = Color(0xFFE06D75),
 )
 
 @Composable
@@ -43,7 +42,6 @@ fun OvaTheme(mode: String, reduceMotion: Boolean, dynamic: Boolean, content: @Co
         dark -> Dark
         else -> Light
     }
-    // Keep status/navigation bar icons readable when the app theme differs from the system theme.
     val view = LocalView.current
     if (!view.isInEditMode) SideEffect {
         val activity: Activity? = view.context.findActivity()
@@ -60,7 +58,12 @@ fun OvaTheme(mode: String, reduceMotion: Boolean, dynamic: Boolean, content: @Co
             typography = base.copy(
                 titleMedium = base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.Bold)),
-            shapes = Shapes(medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(24.dp)),
+            shapes = Shapes(
+                small = RoundedCornerShape(12.dp),
+                medium = RoundedCornerShape(20.dp),
+                large = RoundedCornerShape(28.dp),
+                extraLarge = RoundedCornerShape(36.dp)
+            ),
             content = content,
         )
     }
