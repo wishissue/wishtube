@@ -127,7 +127,7 @@ private fun AppScaffold(vm: AppViewModel, reduce: Boolean) {
                     if (np != null && route?.startsWith("watch") != true)
                         MiniPlayer(np, vm.container.player, { actions.openVideo(np) }, { vm.closePlayer() }, hazeState, glassEnabled)
                     if (isTab && !wide) {
-                        val barMod = if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(tint = HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)), blurRadius = 25.dp)) else Modifier
+                        val barMod = if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(backgroundColor = MaterialTheme.colorScheme.surface, tint = null, blurRadius = 25.dp)) else Modifier
                         NavigationBar(
                             modifier = barMod,
                             containerColor = if (glassEnabled) Color.Transparent else NavigationBarDefaults.containerColor
@@ -140,7 +140,7 @@ private fun AppScaffold(vm: AppViewModel, reduce: Boolean) {
         ) { pad ->
             Row(Modifier.fillMaxSize().then(if (glassEnabled) Modifier.hazeSource(hazeState) else Modifier)) {
                 if (isTab && wide) {
-                    val railMod = if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(tint = HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)), blurRadius = 25.dp)) else Modifier
+                    val railMod = if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(backgroundColor = MaterialTheme.colorScheme.surface, tint = null, blurRadius = 25.dp)) else Modifier
                     NavigationRail(
                         modifier = railMod
                     ) {
@@ -182,7 +182,7 @@ private fun MiniPlayer(video: Video, player: Player, onOpen: () -> Unit, onClose
         player.addListener(l); onDispose { player.removeListener(l) }
     }
     val mod = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth()
-        .then(if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(tint = HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)), blurRadius = 20.dp)) else Modifier)
+        .then(if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(backgroundColor = MaterialTheme.colorScheme.surface, tint = HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)), blurRadius = 20.dp)) else Modifier)
     Surface(
         tonalElevation = if (glassEnabled) 0.dp else 3.dp,
         color = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant,
