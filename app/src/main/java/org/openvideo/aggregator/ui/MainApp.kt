@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -36,11 +37,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.compose.AsyncImage
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.flow.collectLatest
 import org.openvideo.aggregator.domain.FeedMode
 import org.openvideo.aggregator.domain.Video
@@ -89,7 +85,6 @@ private fun AppScaffold(vm: AppViewModel, reduce: Boolean) {
     val snack = remember { SnackbarHostState() }
     val nowPlaying by vm.nowPlaying.collectAsStateWithLifecycle()
     val deepLink by vm.container.deepLink.collectAsStateWithLifecycle()
-    val hazeState = remember { HazeState() }
     val glassEnabled = rememberGlassEnabled(vm)
     LaunchedEffect(Unit) { vm.messages.collectLatest { snack.showSnackbar(it) } }
 
@@ -125,28 +120,39 @@ private fun AppScaffold(vm: AppViewModel, reduce: Boolean) {
                 Column {
                     val np = nowPlaying
                     if (np != null && route?.startsWith("watch") != true)
-                        MiniPlayer(np, vm.container.player, { actions.openVideo(np) }, { vm.closePlayer() }, hazeState, glassEnabled)
+                        MiniPlayer(np, vm.container.player, { actions.openVideo(np) }, { vm.closePlayer() }, glassEnabled)
                     if (isTab && !wide) {
-                        val barMod = if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(backgroundColor = MaterialTheme.colorScheme.surface, tint = null, blurRadius = 25.dp)) else Modifier
-                        NavigationBar(
-                            modifier = barMod,
-                            containerColor = if (glassEnabled) Color.Transparent else NavigationBarDefaults.containerColor
-                        ) {
-                            mainTabs.forEach { t -> NavigationBarItem(route == t.route, { goTab(t.route) }, { Icon(t.icon, null) }, label = { Text(t.label) }) }
+                        if (glassEnabled) {
+                            GlassSurface(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                                NavigationBar(containerColor = Color.Transparent) {
+                                    mainTabs.forEach { t -> NavigationBarItem(route == t.route, { goTab(t.route) }, { Icon(t.icon, null) }, label = { Text(t.label) }) }
+                                }
+                            }
+                        } else {
+                            NavigationBar {
+                                mainTabs.forEach { t -> NavigationBarItem(route == t.route, { goTab(t.route) }, { Icon(t.icon, null) }, label = { Text(t.label) }) }
+                            }
                         }
                     }
                 }
             },
         ) { pad ->
-            Row(Modifier.fillMaxSize().then(if (glassEnabled) Modifier.hazeSource(hazeState) else Modifier)) {
+            Row(Modifier.fillMaxSize()) {
                 if (isTab && wide) {
-                    val railMod = if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(backgroundColor = MaterialTheme.colorScheme.surface, tint = null, blurRadius = 25.dp)) else Modifier
-                    NavigationRail(
-                        modifier = railMod
-                    ) {
-                        Spacer(Modifier.weight(1f))
-                        mainTabs.forEach { t -> NavigationRailItem(route == t.route, { goTab(t.route) }, { Icon(t.icon, null) }, label = { Text(t.label) }) }
-                        Spacer(Modifier.weight(1f))
+                    if (glassEnabled) {
+                        GlassSurface(modifier = Modifier.padding(8.dp).fillMaxHeight(), shape = RoundedCornerShape(24.dp)) {
+                            NavigationRail(containerColor = Color.Transparent) {
+                                Spacer(Modifier.weight(1f))
+                                mainTabs.forEach { t -> NavigationRailItem(route == t.route, { goTab(t.route) }, { Icon(t.icon, null) }, label = { Text(t.label) }) }
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    } else {
+                        NavigationRail {
+                            Spacer(Modifier.weight(1f))
+                            mainTabs.forEach { t -> NavigationRailItem(route == t.route, { goTab(t.route) }, { Icon(t.icon, null) }, label = { Text(t.label) }) }
+                            Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
                 NavHost(
@@ -175,22 +181,15 @@ private fun AppScaffold(vm: AppViewModel, reduce: Boolean) {
 }
 
 @Composable
-private fun MiniPlayer(video: Video, player: Player, onOpen: () -> Unit, onClose: () -> Unit, hazeState: HazeState, glassEnabled: Boolean) {
+private fun MiniPlayer(video: Video, player: Player, onOpen: () -> Unit, onClose: () -> Unit, glassEnabled: Boolean) {
     var playing by remember { mutableStateOf(player.isPlaying) }
     DisposableEffect(player) {
         val l = object : Player.Listener { override fun onIsPlayingChanged(isPlaying: Boolean) { playing = isPlaying } }
         player.addListener(l); onDispose { player.removeListener(l) }
     }
-    val mod = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth()
-        .then(if (glassEnabled) Modifier.hazeEffect(hazeState, style = HazeStyle(backgroundColor = MaterialTheme.colorScheme.surface, tint = HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)), blurRadius = 20.dp)) else Modifier)
-    Surface(
-        tonalElevation = if (glassEnabled) 0.dp else 3.dp,
-        color = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(16.dp),
-        modifier = mod.clickable(onClickLabel = "Open player for ${video.title}", onClick = onOpen)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(video.thumbnail, null, Modifier.width(96.dp).aspectRatio(16 / 9f), contentScale = ContentScale.Crop)
+    val content = @Composable {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
+            AsyncImage(video.thumbnail, null, Modifier.width(96.dp).aspectRatio(16 / 9f).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text(video.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
                 Text(video.source.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -199,6 +198,23 @@ private fun MiniPlayer(video: Video, player: Player, onOpen: () -> Unit, onClose
                 Icon(if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow, if (playing) "Pause" else "Play")
             }
             IconButton(onClose) { Icon(Icons.Outlined.Close, "Close player") }
+        }
+    }
+    if (glassEnabled) {
+        GlassSurface(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth()
+                .clickable(onClickLabel = "Open player for ${video.title}", onClick = onOpen),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            content()
+        }
+    } else {
+        Surface(
+            tonalElevation = 3.dp, shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth()
+                .clickable(onClickLabel = "Open player for ${video.title}", onClick = onOpen)
+        ) {
+            content()
         }
     }
 }

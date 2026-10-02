@@ -49,7 +49,8 @@ class Downloads(
         try {
             library.cache(listOf(video))
             dao.putDownload(DownloadEntity(video.id, file.absolutePath, DlStatus.RUNNING, 0, 0, now))
-            val url = sources.source(video.source).resolveStream(video).downloadUrl
+            val s = sources.source(video.source).resolveStream(video)
+            val url = s.downloadUrl ?: s.urls.firstOrNull()
                 ?: throw IOException("${video.source.label} doesn't offer a downloadable file for this video.")
             Http.client.newCall(Request.Builder().url(url).build()).execute().use { r ->
                 if (!r.isSuccessful) throw IOException("HTTP ${r.code}")

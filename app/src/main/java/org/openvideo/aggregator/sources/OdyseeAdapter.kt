@@ -121,7 +121,7 @@ class OdyseeAdapter : VideoSource {
             ?: channelName.removePrefix("@")
         val ts = (v["release_time"].str()?.toLongOrNull() ?: o["timestamp"].long() ?: 0L) * 1000
         return Video(
-            id = "odysee:$claimId", source = SourceId.ODYSEE, sourceVideoId = "$name|$claimId|${sd.take(6)}",
+            id = "odysee:$claimId", source = SourceId.ODYSEE, sourceVideoId = "$name|$claimId|$sd",
             title = v["title"].str() ?: name, description = v["description"].str().orEmpty(),
             creator = creator, creatorId = ch?.get("claim_id").str() ?: "anonymous",
             thumbnail = v["thumbnail"].obj()?.get("url").str(),

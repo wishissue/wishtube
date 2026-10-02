@@ -6,6 +6,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -216,4 +218,24 @@ fun FailureState(errors: Map<SourceId, String>, nav: Nav?, onRetry: () -> Unit) 
     if (!isOnline(ctx)) EmptyState(Icons.Outlined.CloudOff, "You're offline", "Your local library is still available.",
         action = if (nav != null) "View Library" else "Retry", onAction = { if (nav != null) nav.library() else onRetry() })
     else EmptyState(Icons.Outlined.CloudOff, failureText(errors), "Your local library is still available.", action = "Retry", onAction = onRetry)
+}
+
+@Composable
+fun GlassSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(24.dp),
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val bg = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+    if (onClick != null) {
+        Surface(modifier = modifier, shape = shape, color = bg, border = border, tonalElevation = 6.dp, onClick = onClick) {
+            Box(content = content)
+        }
+    } else {
+        Surface(modifier = modifier, shape = shape, color = bg, border = border, tonalElevation = 6.dp) {
+            Box(content = content)
+        }
+    }
 }
