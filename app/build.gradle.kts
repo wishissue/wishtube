@@ -28,6 +28,11 @@ val keyPasswordProp = getReleaseProperty("keyPassword", "WISHTUBE_KEY_PASSWORD")
 
 val hasReleaseSigning = storeFileProp != null && storePasswordProp != null && keyAliasProp != null && keyPasswordProp != null
 
+val isReleaseBuild = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+if (isReleaseBuild && !hasReleaseSigning && System.getenv("CI") == "true") {
+    throw GradleException("FATAL: Release signing is required on CI/tag builds, but signing configuration is missing.")
+}
+
 android {
     namespace = "app.wishtube"
     compileSdk = 35
@@ -51,11 +56,14 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
+            } else if (System.getenv("CI") == "true") {
+                throw GradleException("FATAL: Release signing is missing on CI.")
             } else {
-                logger.warn("WARNING: Release signing configuration missing. Falling back to debug signing for local release build. Configure WISHTUBE_STORE_FILE, WISHTUBE_STORE_PASSWORD, WISHTUBE_KEY_ALIAS, WISHTUBE_KEY_PASSWORD in local.properties or environment variables to produce an officially signed release build.")
+                logger.warn("WARNING: Release signing configuration missing. Falling back to debug signing for local release build.")
                 signingConfig = signingConfigs.getByName("debug")
             }
         }

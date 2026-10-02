@@ -5,12 +5,11 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: write
-
 jobs:
   release:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -35,23 +34,44 @@ jobs:
 
       - name: Build Signed Release APKs
         env:
+          CI: "true"
           WISHTUBE_STORE_FILE: ${{ runner.temp }}/wishtube.jks
           WISHTUBE_STORE_PASSWORD: ${{ secrets.WISHTUBE_STORE_PASSWORD }}
           WISHTUBE_KEY_ALIAS: ${{ secrets.WISHTUBE_KEY_ALIAS }}
           WISHTUBE_KEY_PASSWORD: ${{ secrets.WISHTUBE_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
+      - name: Verify APK Signature
+        run: |
+          BUILD_TOOLS=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | tail -n 1)
+          APKSIGNER="$BUILD_TOOLS/apksigner"
+          for apk in app/build/outputs/apk/release/*.apk; do
+            echo "Verifying $apk"
+            "$APKSIGNER" verify --verbose "$apk"
+          done
+
+      - name: Copy APKs to output/
+        run: |
+          mkdir -p output
+          cp app/build/outputs/apk/release/*.apk output/
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apks
+          path: output/*
+
       - name: Compute SHA-256 Checksums
         run: |
-          cd app/build/outputs/apk/release/
+          cd output/
           sha256sum *.apk > SHA256SUMS.txt
 
       - name: Create GitHub Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/release/SHA256SUMS.txt
+            output/*.apk
+            output/SHA256SUMS.txt
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
