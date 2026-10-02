@@ -42,6 +42,7 @@ import coil.compose.AsyncImage
 import org.openvideo.aggregator.data.Kind
 import org.openvideo.aggregator.domain.SourceId
 import org.openvideo.aggregator.domain.Video
+import org.openvideo.aggregator.domain.RightsStatus
 import org.openvideo.aggregator.domain.creatorKey
 import org.openvideo.aggregator.recommend.Topics
 import org.openvideo.aggregator.ui.theme.LocalReduceMotion
@@ -123,13 +124,35 @@ fun VideoCard(video: Video, vm: AppViewModel, onClick: () -> Unit, modifier: Mod
     }
 
     @Composable
+    fun LicenseBadge() {
+        val color = when (video.license.status) {
+            RightsStatus.REMIXABLE -> MaterialTheme.colorScheme.secondary
+            else -> MaterialTheme.colorScheme.tertiary
+        }
+        Surface(
+            color = color.copy(alpha = 0.15f),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                video.license.name,
+                style = MaterialTheme.typography.labelSmall,
+                color = color,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+    }
+
+    @Composable
     fun Texts(m: Modifier) {
-        Column(m) {
+        Column(m, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(video.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(video.creator, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = if (nav != null) Modifier.clickable(onClickLabel = "Open creator ${video.creator}") { nav.openCreator(video) } else Modifier)
-            Text(video.metaLine(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(video.metaLine(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                LicenseBadge()
+            }
             if (reason != null) Text(reason, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
         }
     }

@@ -40,6 +40,7 @@ data class Video(
     val tags: List<String>,
     val categories: List<String>,
     val sourceUrl: String,
+    val license: LicenseInfo = LicenseInfo.parse(null),
 )
 
 val Video.creatorKey: String get() = "${source.name}:$creatorId"
