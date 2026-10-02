@@ -54,11 +54,12 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
         job = viewModelScope.launch {
             loading = true
             val r = c.sources.query(sources) { it.search(q, 0, sort) }
+            val validVideos = r.videos.filter { it.title.isNotBlank() && it.sourceVideoId.isNotBlank() }
             results = when (sort) {   // each source ranks differently, so re-apply explicit sorts locally
-                SearchSort.NEWEST -> r.videos.sortedByDescending { it.uploadDate }
-                SearchSort.OLDEST -> r.videos.sortedBy { it.uploadDate }
-                SearchSort.POPULAR -> r.videos.sortedByDescending { it.viewCount ?: 0L }
-                SearchSort.RELEVANCE -> r.videos
+                SearchSort.NEWEST -> validVideos.sortedByDescending { it.uploadDate }
+                SearchSort.OLDEST -> validVideos.sortedBy { it.uploadDate }
+                SearchSort.POPULAR -> validVideos.sortedByDescending { it.viewCount ?: 0L }
+                SearchSort.RELEVANCE -> validVideos
             }
             errors = r.errors; loading = false
         }
@@ -115,7 +116,7 @@ fun SearchScreen(app: AppViewModel, pad: PaddingValues, nav: Nav, onBack: () -> 
                             modifier = Modifier.clickable { vm.query = r.term; submit() })
                     }
                 }
-                shown == null -> EmptyState(Icons.Outlined.Search, "Search across sources", "Results from PeerTube and Odysee appear together, each labelled with its origin.")
+                shown == null -> EmptyState(Icons.Outlined.Search, "Search across sources", "Results from PeerTube, Odysee, Internet Archive, media.ccc.de, and Wikimedia Commons appear together.")
                 shown.isEmpty() && vm.errors.isNotEmpty() -> FailureState(vm.errors, nav) { vm.run() }
                 shown.isEmpty() -> EmptyState(Icons.Outlined.SearchOff, "Nothing found", "Try another search or source.")
                 else -> LazyVerticalGrid(cells, contentPadding = PaddingValues(16.dp),
