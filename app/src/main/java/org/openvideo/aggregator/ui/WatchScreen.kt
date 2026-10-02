@@ -53,6 +53,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import org.openvideo.aggregator.data.DlStatus
@@ -112,6 +113,7 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
     var resolving by remember(video.id) { mutableStateOf(true) }
     var loadError by remember(video.id) { mutableStateOf<String?>(null) }
     var attempt by remember(video.id) { mutableIntStateOf(0) }
+    var streamIndex by remember(video.id) { mutableIntStateOf(0) }
     var extra by remember(video.id) { mutableStateOf<StreamInfo?>(null) }
     var playerError by remember { mutableStateOf<String?>(null) }
     val hidden by vm.hiddenCreators.collectAsStateWithLifecycle()
@@ -142,9 +144,9 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
     BackHandler(fullscreen) { fullscreen = false }
 
     // Resolve the stream and start playback. Downloaded files play offline without any network call.
-    LaunchedEffect(video.id, attempt) {
+    LaunchedEffect(video.id, attempt, streamIndex) {
         val playing = vm.nowPlaying.value
-        if (playing?.id == video.id && attempt == 0 && exo.playbackState != Player.STATE_IDLE) {
+        if (playing?.id == video.id && attempt == 0 && streamIndex == 0 && exo.playbackState != Player.STATE_IDLE) {
             resolving = false; return@LaunchedEffect
         }
         if (playing != null && playing.id != video.id) vm.saveProgress(playing, exo.currentPosition, exo.duration)
@@ -154,7 +156,11 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
             val local = dl?.takeIf { it.status == DlStatus.DONE && File(it.path).exists() }
             val s: StreamInfo? = if (local != null) null else c.sources.source(video.source).resolveStream(video)
             extra = s
-            val uri = if (local != null) Uri.fromFile(File(local.path)) else Uri.parse(s!!.url)
+            val targetUrl = if (local != null) Uri.fromFile(File(local.path)).toString() else {
+                val urls = s?.urls.orEmpty()
+                urls.getOrNull(streamIndex.coerceIn(0, (urls.size - 1).coerceAtLeast(0))) ?: s?.url ?: throw IOException("No stream URL available")
+            }
+            val uri = Uri.parse(targetUrl)
             val item = MediaItem.Builder().setUri(uri)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(video.title).setArtist(video.creator)
                     .setArtworkUri(video.thumbnail?.let { Uri.parse(it) }).build())
@@ -184,9 +190,17 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
     DisposableEffect(video.id) {
         onDispose { if (vm.nowPlaying.value?.id == video.id) vm.saveProgress(video, exo.currentPosition, exo.duration) }
     }
-    DisposableEffect(exo, related) {
+    DisposableEffect(exo, related, extra) {
         val l = object : Player.Listener {
-            override fun onPlayerError(error: PlaybackException) { playerError = error.message ?: "Playback error" }
+            override fun onPlayerError(error: PlaybackException) {
+                val s = extra
+                if (s != null && streamIndex + 1 < s.urls.size) {
+                    streamIndex++
+                    attempt++
+                } else {
+                    playerError = "Playback failed (code ${error.errorCode}: ${error.message ?: error::class.java.simpleName})"
+                }
+            }
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) playerError = null
                 if (playbackState == Player.STATE_ENDED && vm.prefs.autoplayNext.value) {
@@ -198,7 +212,8 @@ private fun WatchContent(video: Video, vm: AppViewModel, pad: PaddingValues, onO
     }
 
     val retry: () -> Unit = {
-        if (loadError != null) attempt++ else { playerError = null; exo.prepare(); exo.play() }
+        streamIndex = 0
+        attempt++
     }
     val playerBox: @Composable (Modifier) -> Unit = { m ->
         PlayerArea(video, exo, m, resolving, loadError ?: playerError, gestures, retry) { fullscreen = it }

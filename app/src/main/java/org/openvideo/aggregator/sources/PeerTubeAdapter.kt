@@ -80,16 +80,25 @@ class PeerTubeAdapter(private val prefs: SharedPreferences) : VideoSource {
         fun res(f: JsonObject) = f["resolution"].obj()?.get("id").long() ?: 0L
         val webFiles = ((o["files"] as? JsonArray) ?: (o["webVideoFiles"] as? JsonArray))
             ?.mapNotNull { it.obj() }.orEmpty().filter { it["fileUrl"].str() != null }
-        val best = webFiles.filter { res(it) <= 1080 }.maxByOrNull { res(it) } ?: webFiles.minByOrNull { res(it) }
-        val mp4Raw = best?.get("fileUrl").str()
-        val mp4 = mp4Raw?.let { if (it.startsWith("/")) "https://$host$it" else it }
-        val downloadRaw = best?.get("fileDownloadUrl").str() ?: mp4Raw
-        val download = downloadRaw?.let { if (it.startsWith("/")) "https://$host$it" else it }
+        
+        val sortedFiles = webFiles.sortedByDescending { res(it) }
+        val mp4Urls = sortedFiles.mapNotNull { f ->
+            val u = f["fileUrl"].str() ?: return@mapNotNull null
+            if (u.startsWith("/")) "https://$host$u" else u
+        }
         val hlsRaw = (o["streamingPlaylists"] as? JsonArray)?.firstOrNull().obj()?.get("playlistUrl").str()
         val hls = hlsRaw?.let { if (it.startsWith("/")) "https://$host$it" else it }
-        val playUrl = hls ?: mp4
-            ?: throw IOException("No playable stream (video may be private, live or restricted)")
-        StreamInfo(playUrl, hls != null, download, capsD.await(), chapD.await(), descD.await())
+
+        val downloadRaw = sortedFiles.firstOrNull()?.get("fileDownloadUrl").str() ?: mp4Urls.firstOrNull()
+        val download = downloadRaw?.let { if (it.startsWith("/")) "https://$host$it" else it }
+
+        val candidates = mutableListOf<String>()
+        if (hls != null) candidates.add(hls)
+        candidates.addAll(mp4Urls)
+        if (download != null && download !in candidates) candidates.add(download)
+
+        if (candidates.isEmpty()) throw IOException("No playable stream (video may be private, live or restricted)")
+        StreamInfo(urls = candidates, isHls = hls != null, downloadUrl = download, captions = capsD.await(), chapters = chapD.await(), description = descD.await())
     }
 
     override suspend fun resolveUrl(url: String): Video? {

@@ -1,10 +1,15 @@
+@file:Suppress("UnsafeOptInUsageError")
+
 package org.openvideo.aggregator
 
 import android.app.Application
 import android.content.Context
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.room.Room
 import coil.ImageLoader
 import coil.ImageLoaderFactory
@@ -16,6 +21,7 @@ import org.openvideo.aggregator.data.Downloads
 import org.openvideo.aggregator.data.LibraryRepository
 import org.openvideo.aggregator.data.Notifier
 import org.openvideo.aggregator.data.UserPrefs
+import org.openvideo.aggregator.sources.Http
 import org.openvideo.aggregator.sources.SourceManager
 
 /** Tiny manual DI container. No cloud, no analytics, no backend. */
@@ -31,7 +37,10 @@ class AppContainer(ctx: Context) {
 
     /** One shared player: the watch page, mini-player and background service all use it. */
     val player: ExoPlayer by lazy {
-        ExoPlayer.Builder(ctx)
+        val dataSourceFactory = OkHttpDataSource.Factory(Http.client)
+        @OptIn(UnstableApi::class)
+        val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
+        ExoPlayer.Builder(ctx, mediaSourceFactory)
             .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)

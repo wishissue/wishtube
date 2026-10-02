@@ -44,13 +44,23 @@ data class Chapter(val startSec: Int, val title: String)
 
 /** Resolved playback info. Extra fields are optional and only filled when the source provides them. */
 data class StreamInfo(
-    val url: String,
+    val urls: List<String>,
     val isHls: Boolean,
     val downloadUrl: String? = null,          // direct file URL if the source allows downloading
     val captions: List<Caption> = emptyList(),
     val chapters: List<Chapter> = emptyList(),
     val description: String? = null,          // full description when the list endpoint truncates it
-)
+) {
+    val url: String get() = urls.firstOrNull() ?: ""
+    constructor(
+        url: String,
+        isHls: Boolean,
+        downloadUrl: String? = null,
+        captions: List<Caption> = emptyList(),
+        chapters: List<Chapter> = emptyList(),
+        description: String? = null,
+    ) : this(listOf(url), isHls, downloadUrl, captions, chapters, description)
+}
 
 data class CreatorInfo(
     val name: String, val description: String, val avatar: String?, val followers: Long?, val url: String?,
