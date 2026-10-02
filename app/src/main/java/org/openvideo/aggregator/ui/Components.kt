@@ -8,6 +8,7 @@ import android.net.Uri
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -20,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -223,19 +225,76 @@ fun FailureState(errors: Map<SourceId, String>, nav: Nav?, onRetry: () -> Unit) 
 @Composable
 fun GlassSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(24.dp),
+    shape: Shape = RoundedCornerShape(28.dp),
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val bg = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
-    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val brush = remember(surfaceColor, primaryColor) {
+        Brush.linearGradient(
+            colors = listOf(
+                surfaceColor.copy(alpha = 0.90f),
+                surfaceColor.copy(alpha = 0.78f),
+                primaryColor.copy(alpha = 0.12f)
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(1000f, 1000f)
+        )
+    }
+    val borderBrush = remember(primaryColor) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.5f),
+                primaryColor.copy(alpha = 0.3f),
+                Color.Transparent
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(500f, 500f)
+        )
+    }
+
     if (onClick != null) {
-        Surface(modifier = modifier, shape = shape, color = bg, border = border, tonalElevation = 6.dp, onClick = onClick) {
-            Box(content = content)
+        Surface(
+            modifier = modifier.border(BorderStroke(1.5.dp, borderBrush), shape),
+            shape = shape,
+            color = Color.Transparent,
+            tonalElevation = 10.dp,
+            shadowElevation = 10.dp,
+            onClick = onClick
+        ) {
+            Box(modifier = Modifier.background(brush), content = content)
         }
     } else {
-        Surface(modifier = modifier, shape = shape, color = bg, border = border, tonalElevation = 6.dp) {
-            Box(content = content)
+        Surface(
+            modifier = modifier.border(BorderStroke(1.5.dp, borderBrush), shape),
+            shape = shape,
+            color = Color.Transparent,
+            tonalElevation = 10.dp,
+            shadowElevation = 10.dp
+        ) {
+            Box(modifier = Modifier.background(brush), content = content)
         }
+    }
+}
+
+@Composable
+fun FunLoader(message: String = "Loading magic...") {
+    val t = rememberInfiniteTransition(label = "loader")
+    val scale by t.animateFloat(0.85f, 1.15f, infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "scale")
+    val alpha by t.animateFloat(0.5f, 1f, infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "alpha")
+
+    Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Box(
+            Modifier.size(72.dp)
+                .scale(scale)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary))),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Outlined.PlayArrow, null, tint = Color.White, modifier = Modifier.size(40.dp))
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(message, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha))
     }
 }

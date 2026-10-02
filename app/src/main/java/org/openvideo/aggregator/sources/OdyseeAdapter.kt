@@ -54,14 +54,27 @@ class OdyseeAdapter : VideoSource {
         )
     }
 
-    /** sourceVideoId = "name|claimId|sdHash6" */
+    /** sourceVideoId = "name|claimId|sdHash" */
     override suspend fun resolveStream(video: Video): StreamInfo {
-        val (name, claimId, sd) = video.sourceVideoId.split('|', limit = 3)
+        val parts = video.sourceVideoId.split('|', limit = 3)
+        val name = parts.getOrNull(0) ?: ""
+        val claimId = parts.getOrNull(1) ?: ""
+        val sd = parts.getOrNull(2) ?: ""
+
+        val rpcUrl = runCatching {
+            val res = rpc("get", buildJsonObject {
+                put("uri", "lbry://$name#$claimId")
+            })
+            res["streaming_url"].str() ?: res["url"].str()
+        }.getOrNull()
+
         val encodedName = URLEncoder.encode(name, "UTF-8").replace("+", "%20")
-        val url = "https://player.odycdn.com/api/v3/streams/free/$encodedName/$claimId/$sd.mp4"
+        val playerUrl = "https://player.odycdn.com/api/v3/streams/free/$encodedName/$claimId/$sd.mp4"
         val altUrl = "https://lbrytv.ca/api/v3/streams/free/$encodedName/$claimId/$sd.mp4"
         val directUrl = "https://spee.ch/4/$sd/$encodedName.mp4"
-        return StreamInfo(urls = listOf(url, altUrl, directUrl), isHls = false, downloadUrl = url)
+
+        val candidates = listOfNotNull(rpcUrl, playerUrl, altUrl, directUrl).distinct()
+        return StreamInfo(urls = candidates, isHls = false, downloadUrl = candidates.firstOrNull())
     }
 
     override suspend fun resolveUrl(url: String): Video? {
