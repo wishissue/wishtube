@@ -26,7 +26,9 @@ import org.openvideo.aggregator.sources.SourceManager
 
 /** Tiny manual DI container. No cloud, no analytics, no backend. */
 class AppContainer(ctx: Context) {
-    val db = Room.databaseBuilder(ctx, AppDatabase::class.java, "openvideo.db").build()
+    val db = Room.databaseBuilder(ctx, AppDatabase::class.java, "openvideo.db")
+        .fallbackToDestructiveMigration()
+        .build()
     val dao = db.dao()
     val prefs = ctx.getSharedPreferences("openvideo", Context.MODE_PRIVATE)
     val userPrefs = UserPrefs(prefs)
