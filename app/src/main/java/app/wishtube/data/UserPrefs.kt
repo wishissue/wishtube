@@ -22,6 +22,7 @@ class UserPrefs(private val p: SharedPreferences) {
     val autoplayNext = MutableStateFlow(p.getBoolean("autoplayNext", false))
     val onboardingCompleted = MutableStateFlow(p.getBoolean("onboardingCompleted", false))
     val selectedInterests = MutableStateFlow(p.getStringSet("interests", emptySet()) ?: emptySet())
+    val showMature = MutableStateFlow(p.getBoolean("showMature", false))
 
     fun set(key: String, flow: MutableStateFlow<Boolean>, v: Boolean) { p.edit().putBoolean(key, v).apply(); flow.value = v }
     fun setTheme(v: String) { p.edit().putString("theme", v).apply(); theme.value = v }
@@ -30,4 +31,5 @@ class UserPrefs(private val p: SharedPreferences) {
     fun setAutoplayNext(v: Boolean) { p.edit().putBoolean("autoplayNext", v).apply(); autoplayNext.value = v }
     fun setOnboardingCompleted(completed: Boolean) { p.edit().putBoolean("onboardingCompleted", completed).apply(); onboardingCompleted.value = completed }
     fun setInterests(interests: Set<String>) { p.edit().putStringSet("interests", interests).apply(); selectedInterests.value = interests }
+    fun setShowMature(v: Boolean) { p.edit().putBoolean("showMature", v).apply(); showMature.value = v }
 }

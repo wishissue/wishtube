@@ -1,5 +1,6 @@
 package app.wishtube.sources
 
+import android.content.SharedPreferences
 import android.net.Uri
 import kotlinx.serialization.json.*
 import app.wishtube.domain.*
@@ -12,11 +13,13 @@ import java.net.URLEncoder
  * Only free, non-encrypted streams are exposed. No DRM/paywall circumvention.
  * NOTE: endpoint and stream URL scheme are third-party and may change; verify before release.
  */
-class OdyseeAdapter : VideoSource {
+class OdyseeAdapter(private val prefs: SharedPreferences? = null) : VideoSource {
     override val id = SourceId.ODYSEE
     override val capabilities = SourceCapabilities(search = true, downloads = true)
     private val api = "https://api.na-backend.odysee.com/api/v1/proxy"
     private val pageSize = 20
+
+    private fun isMatureEnabled(): Boolean = prefs?.getBoolean("showMature", false) ?: false
 
     private fun arr(vararg s: String) = JsonArray(s.map { JsonPrimitive(it) })
 
@@ -100,7 +103,9 @@ class OdyseeAdapter : VideoSource {
         put("page_size", pageSize); put("page", page + 1)
         put("claim_type", arr("stream")); put("stream_types", arr("video"))
         put("has_source", true); put("no_totals", true)
-        put("not_tags", arr("mature", "porn", "nsfw", "xxx"))
+        if (!isMatureEnabled()) {
+            put("not_tags", arr("mature", "porn", "nsfw", "xxx"))
+        }
     }
 
     private suspend fun rpc(method: String, params: JsonObject): JsonObject {
@@ -123,6 +128,10 @@ class OdyseeAdapter : VideoSource {
     private fun parse(e: JsonElement): Video? {
         val o = e.obj() ?: return null
         val v = o["value"].obj() ?: return null
+        if (!isMatureEnabled()) {
+            val tags = v["tags"].strList().map { it.lowercase() }
+            if (tags.any { it in setOf("mature", "porn", "nsfw", "xxx") }) return null
+        }
         val fee = v["fee"].obj()?.get("amount").str()?.toDoubleOrNull() ?: 0.0
         if (fee > 0) return null                       // paid content: not supported
         val sd = v["source"].obj()?.get("sd_hash").str() ?: return null

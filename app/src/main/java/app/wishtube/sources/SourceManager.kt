@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 class SourceManager(private val prefs: SharedPreferences) {
     val sources: List<VideoSource> = listOf(
         PeerTubeAdapter(prefs),
-        OdyseeAdapter(),
+        OdyseeAdapter(prefs),
         InternetArchiveAdapter(),
         MediaCccAdapter(),
         WikimediaAdapter()

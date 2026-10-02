@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -355,6 +356,15 @@ private fun Details(video: Video, extra: StreamInfo?, vm: AppViewModel, modifier
     var expanded by remember(video.id) { mutableStateOf(false) }
     var noteDialog by remember { mutableStateOf(false) }
     var plDialog by remember { mutableStateOf(false) }
+    var restrictedDlDialog by remember { mutableStateOf(false) }
+
+    fun triggerDownload() {
+        if (video.license.status == RightsStatus.RESTRICTED || video.license.status == RightsStatus.CHECK_RIGHTS) {
+            restrictedDlDialog = true
+        } else {
+            vm.startDownload(video)
+        }
+    }
     val following = follows.any { it.creatorKey == video.creatorKey }
     val description = extra?.description?.takeIf { it.isNotBlank() } ?: video.description
     val chapters = remember(video.id, extra) { extra?.chapters?.takeIf { it.isNotEmpty() } ?: parseChapters(description) }
@@ -398,7 +408,7 @@ private fun Details(video: Video, extra: StreamInfo?, vm: AppViewModel, modifier
                     DlStatus.RUNNING -> AssistChip({ vm.cancelDownload(video.id) },
                         { val total = dl?.total ?: 0L; Text(if (total > 0) "Downloading ${100 * (dl?.bytes ?: 0L) / total}% (cancel)" else "Downloading… (cancel)") },
                         leadingIcon = { Icon(Icons.Outlined.Download, null, Modifier.size(18.dp)) })
-                    else -> AssistChip({ vm.startDownload(video) }, { Text(if (dl?.status == DlStatus.FAILED) "Retry download" else "Download") },
+                    else -> AssistChip({ triggerDownload() }, { Text(if (dl?.status == DlStatus.FAILED) "Retry download" else "Download") },
                         leadingIcon = { Icon(Icons.Outlined.Download, null, Modifier.size(18.dp)) })
                 }
                 AssistChip({ ctx.findActivity()?.enterPictureInPictureMode(PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()) },
@@ -428,6 +438,21 @@ private fun Details(video: Video, extra: StreamInfo?, vm: AppViewModel, modifier
                 }
             }
         }
+        item {
+            GlassSurface(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("License & Rights", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(4.dp))
+                    Text("${video.license.name} (${video.license.status.label})", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(2.dp))
+                    Text("License information is provided by ${video.source.label} for informational purposes.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = { openUrl(ctx, video.sourceUrl) }, contentPadding = PaddingValues(0.dp)) {
+                        Text("View original on ${video.source.label}")
+                    }
+                }
+            }
+        }
         if (chapters.isNotEmpty()) {
             item { Text("Chapters", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() }) }
             items(chapters) { ch ->
@@ -449,6 +474,24 @@ private fun Details(video: Video, extra: StreamInfo?, vm: AppViewModel, modifier
             text = { OutlinedTextField(text, { text = it }, minLines = 3, label = { Text("Only stored on this device") }) },
             confirmButton = { TextButton({ vm.saveNote(video.id, text); noteDialog = false }) { Text("Save") } },
             dismissButton = { TextButton({ noteDialog = false }) { Text("Cancel") } })
+    }
+    if (restrictedDlDialog) {
+        AlertDialog(
+            onDismissRequest = { restrictedDlDialog = false },
+            title = { Text("Download License Notice") },
+            text = {
+                Text("This video is listed under license \"${video.license.name}\" (${video.license.status.label}).\n\nLicense information is provided by the source for informational purposes. Please ensure you have appropriate rights before downloading or reusing.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    restrictedDlDialog = false
+                    vm.startDownload(video)
+                }) { Text("Download Anyway") }
+            },
+            dismissButton = {
+                TextButton(onClick = { restrictedDlDialog = false }) { Text("Cancel") }
+            }
+        )
     }
     if (plDialog) {
         var creating by remember { mutableStateOf(false) }

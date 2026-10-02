@@ -27,6 +27,8 @@ class PeerTubeAdapter(private val prefs: SharedPreferences) : VideoSource {
     private fun feedInstance(): String =
         prefs.getString(KEY_INSTANCE, null)?.takeIf { it.isNotBlank() } ?: DEFAULT_INSTANCE
 
+    private fun isMatureEnabled(): Boolean = prefs.getBoolean("showMature", false)
+
     override suspend fun search(query: String, page: Int, sort: SearchSort): List<Video> {
         val s = when (sort) {
             SearchSort.RELEVANCE -> "-match"; SearchSort.NEWEST -> "-publishedAt"
@@ -34,7 +36,7 @@ class PeerTubeAdapter(private val prefs: SharedPreferences) : VideoSource {
         }
         val root = Http.getJson(Http.url("$searchBase/api/v1/search/videos",
             "search" to query, "start" to (page * pageSize).toString(),
-            "count" to pageSize.toString(), "sort" to s, "nsfw" to "false"))
+            "count" to pageSize.toString(), "sort" to s, "nsfw" to if (isMatureEnabled()) "true" else "false"))
         return list(root, searchBase)
     }
 
@@ -54,7 +56,7 @@ class PeerTubeAdapter(private val prefs: SharedPreferences) : VideoSource {
                     val root = Http.getJson(Http.url("$inst/api/v1/videos",
                         "start" to (page * (pageSize / instances.size).coerceAtLeast(5)).toString(),
                         "count" to (pageSize / instances.size).coerceAtLeast(5).toString(),
-                        "sort" to s, "nsfw" to "false"))
+                        "sort" to s, "nsfw" to if (isMatureEnabled()) "true" else "false"))
                     list(root, inst)
                 }.getOrDefault(emptyList())
             }
@@ -149,6 +151,10 @@ class PeerTubeAdapter(private val prefs: SharedPreferences) : VideoSource {
 
     private fun parse(e: JsonElement, pathBase: String): Video? {
         val o = e.obj() ?: return null
+        if (!isMatureEnabled()) {
+            val isNsfw = o["nsfw"].str() == "true" || o["nsfw"].long() == 1L || (o["nsfw"].obj() != null && o["nsfw"].obj()?.get("id").long() != 0L)
+            if (isNsfw) return null
+        }
         val uuid = o["uuid"].str() ?: return null
         val channel = o["channel"].obj()
         val account = o["account"].obj()
