@@ -1,26 +1,30 @@
-# OpenVideo
+# WishTube
 
-Local-first, privacy-focused Android video client that unifies PeerTube, Odysee, Internet Archive, media.ccc.de, and Wikimedia Commons in one interface.
-No account, no backend, no analytics. Profiles, history, playlists, notes, downloads and recommendations all live on the device.
+A local-first, privacy-focused Android universal media client that unifies PeerTube, Odysee, Internet Archive, media.ccc.de, and Wikimedia Commons into a cozy, warm, liquid glass interface.
+
+No account required, no tracking, no cloud servers. Profiles, watch history, saved items, playlists, private notes, offline downloads, and local recommendation signals remain 100% on device.
 
 ## Open in Android Studio
 1. File > Open > select this folder (Android Studio Ladybug or newer, JDK 17).
-2. Let Gradle sync (the Gradle 8.9 wrapper is included). Accept any suggested dependency bumps.
-3. Run the `app` configuration on a device/emulator (API 26+).
-If you ran an earlier zip of this project, uninstall it first (the database schema changed).
+2. Let Gradle sync (Gradle 8.9 wrapper included).
+3. Run the `app` configuration on a device/emulator (Android 8.0+ / API 26+).
 
-## Implemented
-- Sources: PeerTube (multi-instance parallel aggregation + SepiaSearch), Odysee/LBRY (free streams), Internet Archive, media.ccc.de, and Wikimedia Commons. Adapter architecture with per-source capabilities; one source failing never breaks the others; source reorder/enable/instance settings.
-- Robust Playback (Media3 + OkHttp DataSource): shared OkHttp client with proper User-Agent, redirects enabled, and automatic ordered candidate fallback (HLS -> best MP4 -> lower res MP4s) with detailed error reporting.
-- Glass UI & Polish: Real backdrop blur glass using Haze library for bottom navigation bar, mini-player, top bars, search bar, and overlays. Settings toggle "Glass effects" with automatic fallbacks on Android < 12, battery saver, reduce motion, and WCAG AA contrast.
-- Discovery: Home (For You / New / Chronological), Discover, Following, unified search, creator pages, deep links.
-- Local recommendations & Language Preference: topic/creator/recency/popularity/language signals, preferred languages setting, local heuristic language detector.
-- Library: History with resume, Watch Later, Saved, Liked, Playlists, Downloads (offline playback), private Notes, multiple profiles, JSON export/import of a profile.
+## Features
+- **Unified Discovery & Search**: Concurrent search across PeerTube, Odysee, Internet Archive, media.ccc.de, and Wikimedia Commons with provider badges and instant progressive result loading.
+- **License-Aware Rights Model**: Classifies content by license (Public Domain, CC0, CC BY, CC BY-SA) and reuse status (Remixable, Check Rights, Restricted) with visual license badges.
+- **Proven Open-Source Playback Engine**: Powered by AndroidX Media3 (ExoPlayer, OkHttp DataSource, HLS, DASH) with automatic candidate stream fallbacks, buffering indicators, subtitle tracks, Picture-in-Picture, and background playback.
+- **Cozy Liquid Glass Aesthetic**: Custom `GlassSurface` components featuring frosted gradients, refraction borders, soft shadows, rounded 28dp shape tokens, and a warm palette (Cream, Terracotta, Sage, Coffee Brown).
+- **Local User Library & Playlists**: Local Room database storing Watch Later, Saved, Liked, private Notes, custom multi-source Playlists, and JSON profile export/import.
+- **Source Management**: Reorder, enable/disable sources, and add custom PeerTube instances in Settings.
 
-## Deliberately NOT implemented (would be fake or inapplicable)
-- SponsorBlock / DeArrow: keyed by YouTube video IDs which these platforms don't expose.
-- Source authentication: watching never needs an account.
+## Architecture & Technology
+- **UI Framework**: Jetpack Compose (Compose BOM 2024.12.01, Material 3, Material Symbols Rounded).
+- **Playback**: AndroidX Media3 (ExoPlayer 1.5.1 + OkHttp DataSource 1.5.1).
+- **Database**: Room 2.6.1 with destructive migration fallback.
+- **Networking**: OkHttp 4.12.0 + kotlinx.serialization.
+- **Image Caching**: Coil 2.7.0 with OkHttp call factory.
 
-## Known limitations / verify before release
-- Downloads run inside the app process; if Android kills the app mid-download it is marked failed and can be retried.
-- Run a real dependency license audit (see THIRD_PARTY_LICENSES.md). Check accessibility with TalkBack and font scaling on device.
+## Licensing & Disclaimer
+WishTube is licensed under the Apache License, Version 2.0. See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for full license notices.
+
+*Disclaimer: WishTube is an independent open-source media client and is not affiliated with, endorsed by, or sponsored by any of the third-party platforms or content providers it connects to.*
