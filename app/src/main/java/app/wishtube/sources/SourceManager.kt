@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.StateFlow
 import app.wishtube.domain.CreatorInfo
 import app.wishtube.domain.SourceId
 import app.wishtube.domain.Video
+import java.net.InetAddress
+import java.net.URI
+import java.net.UnknownHostException
 import java.util.concurrent.ConcurrentHashMap
 
 /** Runs queries across sources in parallel. One failing source never breaks the others. */
@@ -56,12 +59,68 @@ class SourceManager(private val prefs: SharedPreferences) {
         prefs.edit().putString("src_order", l.joinToString(",")).apply()
     }
 
+    fun validatePeerTubeInstanceUrl(input: String): String? {
+        val trimmed = input.trim().trimEnd('/')
+        if (trimmed.isEmpty()) return null
+        var s = trimmed
+        if (!s.contains("://")) s = "https://$s"
+
+        val uri = try {
+            URI(s)
+        } catch (e: Exception) {
+            return "Invalid URL format"
+        }
+
+        if (uri.scheme != "https") {
+            return "Only https:// URLs are allowed"
+        }
+        if (!uri.userInfo.isNullOrEmpty()) {
+            return "URLs with user credentials are not allowed"
+        }
+        val host = uri.host ?: return "URL must include a valid host"
+        val lowerHost = host.lowercase()
+
+        if (lowerHost == "localhost" || lowerHost.endsWith(".local")) {
+            return "Local and internal hosts are not allowed"
+        }
+
+        try {
+            val inet = InetAddress.getByName(host)
+            if (inet.isLoopbackAddress || inet.isSiteLocalAddress || inet.isLinkLocalAddress || inet.isAnyLocalAddress) {
+                return "Local and private IP addresses are not allowed"
+            }
+            val bytes = inet.address
+            if (bytes.size == 4) {
+                val b0 = bytes[0].toInt() and 0xFF
+                val b1 = bytes[1].toInt() and 0xFF
+                if (b0 == 127 || b0 == 10 || (b0 == 172 && b1 in 16..31) || (b0 == 192 && b1 == 168) || (b0 == 169 && b1 == 254)) {
+                    return "Local and private IP addresses are not allowed"
+                }
+            } else if (bytes.size == 16) {
+                val b0 = bytes[0].toInt() and 0xFF
+                if (inet.isLoopbackAddress || (b0 and 0xFE) == 0xFC) {
+                    return "Local and private IP addresses are not allowed"
+                }
+            }
+        } catch (e: UnknownHostException) {
+            if (lowerHost == "localhost" || lowerHost.endsWith(".local") || lowerHost.startsWith("127.") || lowerHost.startsWith("10.") || lowerHost.startsWith("192.168.")) {
+                return "Local and private IP addresses are not allowed"
+            }
+        }
+
+        return null
+    }
+
     /** @return error message, or null when accepted */
     fun setPeerTubeInstance(input: String): String? {
-        var s = input.trim().trimEnd('/')
+        val trimmed = input.trim().trimEnd('/')
+        val error = validatePeerTubeInstanceUrl(trimmed)
+        if (error != null) return error
+
+        var s = trimmed
         if (s.isEmpty()) s = PeerTubeAdapter.DEFAULT_INSTANCE
-        if (!s.startsWith("http")) s = "https://$s"
-        if (!s.startsWith("https://") || s.length < 12 || ' ' in s) return "Enter a valid https:// address"
+        if (!s.contains("://")) s = "https://$s"
+
         prefs.edit().putString(PeerTubeAdapter.KEY_INSTANCE, s).apply()
         _instance.value = s
         return null
