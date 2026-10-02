@@ -50,7 +50,8 @@ object RecommendationEngine {
         now: Long = System.currentTimeMillis(), rng: Random = Random.Default,
     ): List<Ranked> {
         val pool = candidates.distinctBy { it.id }.filter { v ->
-            v.creatorKey !in sig.hiddenCreators && v.id !in sig.notInterested &&
+            v.title.isNotBlank() && v.sourceVideoId.isNotBlank() &&
+                v.creatorKey !in sig.hiddenCreators && v.id !in sig.notInterested &&
                 Topics.of(v).none { it in sig.hiddenTopics }
         }
         fun plain(v: Video, why: String) = Ranked(v, 0f, listOf(why))
