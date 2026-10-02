@@ -49,7 +49,9 @@ object RecommendationEngine {
         candidates: List<Video>, sig: ProfileSignals, w: RecWeights, mode: FeedMode,
         now: Long = System.currentTimeMillis(), rng: Random = Random.Default,
     ): List<Ranked> {
-        val pool = candidates.distinctBy { it.id }.filter { v ->
+        val pool = candidates.distinctBy {
+            if (it.id.isNotBlank()) it.id else "${it.title.lowercase().trim()}_${it.durationSec}"
+        }.filter { v ->
             v.title.isNotBlank() && v.sourceVideoId.isNotBlank() &&
                 v.creatorKey !in sig.hiddenCreators && v.id !in sig.notInterested &&
                 Topics.of(v).none { it in sig.hiddenTopics }
@@ -73,6 +75,8 @@ object RecommendationEngine {
             val matches = topics.count { t -> sig.selectedInterests.any { i -> t.contains(i.lowercase()) || i.lowercase().contains(t) } }
             (matches.toFloat() / sig.selectedInterests.size.coerceAtLeast(1)).coerceIn(0f, 1f)
         }
+        val isColdStart = sig.seen.size < 5
+        val coldStartBoost = if (isColdStart && interestMatch > 0f) 2.0f else 0f
         val creatorFam = tanh((sig.creatorAffinity[v.creatorKey] ?: 0f).toDouble()).toFloat()
         val subscribed = if (v.creatorKey in sig.followed) 1f else 0f
         val isNew = v.creatorKey !in sig.creatorAffinity && subscribed == 0f
@@ -92,7 +96,7 @@ object RecommendationEngine {
             FeedMode.DISCOVER -> (if (isNew) 1f else 0f) + (1f - topic.coerceAtLeast(0f)) * 0.8f +
                 recency * 0.3f + rand * 0.3f - seenPenalty - creatorFam.coerceAtLeast(0f) * 0.5f + interestMatch * 0.5f
             FeedMode.SMALL -> small * 2f + recency * 0.5f + topic.coerceAtLeast(0f) * 0.3f + rand * 0.2f - seenPenalty
-            else -> w.topic * topic * 2f + interestMatch * 1.5f + w.creator * creatorFam + w.subscribed * subscribed +
+            else -> w.topic * topic * 2f + interestMatch * 1.5f + coldStartBoost + w.creator * creatorFam + w.subscribed * subscribed +
                 w.newCreators * (if (isNew) 0.6f else 0f) + w.popularity * pop + w.recency * recency +
                 w.smallCreators * small * 0.6f + w.randomness * rand * 1.5f + length * 0.3f - seenPenalty
         }
