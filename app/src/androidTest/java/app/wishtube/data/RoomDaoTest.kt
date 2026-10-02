@@ -9,8 +9,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class RoomDaoTest {
@@ -41,7 +41,7 @@ class RoomDaoTest {
         dao.upsertVideos(listOf(cached))
         val retrieved = dao.video("peertube:test|1")
         assertNotNull(retrieved)
-        assertEquals("Test Video", retrieved.title)
+        assertEquals("Test Video", retrieved?.title)
     }
 
     @Test
